@@ -3,11 +3,7 @@ import vertexShaderSource from "~/routes/hello-triangle/hello-triangle.vert?raw"
 import fragmentShaderSource from "~/routes/hello-triangle/hello-triangle.frag?raw";
 import { sizeof } from "~/lib/sizeof";
 import type { Geometry, VertexAttributeConfig } from "~/lib/geometry";
-import {
-  clearAndResizeCanvas,
-  resizeCanvas,
-  setupWebGLContextWithCanvasResize
-} from "~/lib/canvas";
+import { clearCanvasViewport, resizeCanvas, setupWebGLContextWithCanvasResize } from "~/lib/canvas";
 import { configureSceneObject } from "~/lib/scene-object";
 
 export function helloTriangle(canvas: HTMLCanvasElement): () => void {
@@ -61,7 +57,7 @@ export function helloTriangle(canvas: HTMLCanvasElement): () => void {
       return;
     }
 
-    clearAndResizeCanvas(gl, canvas);
+    clearCanvasViewport(gl);
 
     gl.bindVertexArray(sceneObject.vertexArrayObject);
     gl.useProgram(sceneObject.shaderProgram);
@@ -75,6 +71,7 @@ export function helloTriangle(canvas: HTMLCanvasElement): () => void {
     requestAnimationFrame(() => render(gl, canvas));
   }
 
+  resizeCanvas(canvas, gl, window.innerWidth, window.innerHeight);
   requestAnimationFrame(() => render(gl, canvas));
   return cleanup;
 }

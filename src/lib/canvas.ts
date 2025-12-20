@@ -1,5 +1,5 @@
 import { on } from "svelte/events";
-import { Colors, defaultClearColor, type Color } from "~/lib/color";
+import { defaultClearColor, type Color } from "~/lib/color";
 
 export function resizeCanvas(
   canvas: HTMLCanvasElement,
@@ -35,15 +35,13 @@ type ClearOptions = {
   enableDepthTesting: boolean;
 };
 
-export function clearAndResizeCanvas(
+export function clearCanvasViewport(
   gl: WebGL2RenderingContext,
-  canvas: HTMLCanvasElement,
   options: ClearOptions = {
     clearColor: defaultClearColor,
     enableDepthTesting: false
   }
 ) {
-  resizeCanvas(canvas, gl, window.innerWidth, window.innerHeight);
   const clearColor = options.clearColor;
   gl.clearColor(clearColor.r, clearColor.g, clearColor.b, clearColor.a);
   if (options.enableDepthTesting) {
