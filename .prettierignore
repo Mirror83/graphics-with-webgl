@@ -1,0 +1,14 @@
+# Package Managers
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+bun.lock
+bun.lockb
+
+# Tauri
+src-tauri/target/
+src-tauri/icons/
+src-tauri/src/
+
+# Miscellaneous
+/static/
