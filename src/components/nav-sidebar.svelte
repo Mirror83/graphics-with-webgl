@@ -4,7 +4,8 @@
 
   const paths = [
     { href: "/", name: "Home" },
-    { href: "/hello-triangle", name: "Hello Triangle" }
+    { href: "/hello-triangle", name: "Hello Triangle" },
+    { href: "/hello-triangle-indexed", name: "Hello Triangle (indexed)" }
   ];
   const currentPath = $derived(page.url.pathname);
   const selectedPath = $derived(paths.find((path) => path.href === currentPath));
