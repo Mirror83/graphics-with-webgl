@@ -9,6 +9,6 @@ export type VertexAttributeConfig = {
 
 export type Geometry = {
   vertices: Float32Array;
-  indices?: Uint16Array;
+  indices?: Uint32Array;
   attributeConfigs: VertexAttributeConfig[];
 };

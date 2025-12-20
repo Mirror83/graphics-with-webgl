@@ -4,6 +4,7 @@ import { type ShaderSources, createShaderProgram } from "~/lib/shaders";
 export type SceneObject = {
   vertexArrayObject: WebGLVertexArrayObject;
   shaderProgram: WebGLProgram;
+  elementBuffer?: WebGLBuffer;
   draw?: () => void;
 };
 
@@ -18,6 +19,12 @@ export function configureSceneObject(
   const vertexBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
   gl.bufferData(gl.ARRAY_BUFFER, geometry.vertices, gl.STATIC_DRAW);
+
+  const elementBuffer = gl.createBuffer();
+  if (geometry.indices) {
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, elementBuffer);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, geometry.indices, gl.STATIC_DRAW);
+  }
 
   const shaderProgram = createShaderProgram(gl, shaderSources);
 
@@ -42,5 +49,9 @@ export function configureSceneObject(
   // Unbind vertex array to prevent capturing another object's config.
   gl.bindVertexArray(null);
 
-  return { vertexArrayObject, shaderProgram };
+  const sceneObject: SceneObject = { vertexArrayObject, shaderProgram };
+  if (geometry.indices) {
+    sceneObject.elementBuffer = elementBuffer;
+  }
+  return sceneObject;
 }
