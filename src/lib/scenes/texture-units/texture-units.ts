@@ -1,11 +1,28 @@
-import { getShaderSources, type ShaderSources } from "~/lib/shaders";
+import { getShaderSources, setUniform, type ShaderSources } from "~/lib/shaders";
 import type { Geometry, VertexAttributeConfig } from "~/lib/geometry";
-import { clearCanvasViewport, resizeCanvas, setupWebGLContextWithCanvasResize } from "~/lib/canvas";
+import {
+  clearCanvasViewport,
+  resizeCanvas,
+  setupKeydownHandler,
+  setupWebGLContextWithCanvasResize
+} from "~/lib/canvas";
 import { configureSceneObject } from "~/lib/scene-object";
 import type { RenderWrapper } from "~/lib/render";
 import { loadTexture } from "~/lib/textures";
 
 const shaderSources: ShaderSources = await getShaderSources("texture-units");
+
+type ChangeMixAmountEvent =
+  | {
+      type: "change-mix-amount";
+      payload: "increase";
+    }
+  | {
+      type: "change-mix-amount";
+      payload: "decrease";
+    };
+
+type RenderEvent = ChangeMixAmountEvent;
 
 const textureUnits: RenderWrapper = (canvas) => {
   const result = setupWebGLContextWithCanvasResize(canvas);
@@ -13,7 +30,8 @@ const textureUnits: RenderWrapper = (canvas) => {
     return () => {};
   }
 
-  const { gl, cleanup } = result;
+  const gl = result.gl;
+  let resizeHandlerCleanup = result.cleanup;
 
   // prettier-ignore
   const vertices = new Float32Array([
@@ -64,12 +82,10 @@ const textureUnits: RenderWrapper = (canvas) => {
     ]
   };
 
-  console.debug("No.of textures:", geometry.textures?.length);
-
   const sceneObject = configureSceneObject(gl, geometry, shaderSources);
   if (!sceneObject) {
     alert("Unable to configure geometry");
-    return cleanup;
+    return resizeHandlerCleanup;
   }
 
   sceneObject.draw = function () {
@@ -80,15 +96,64 @@ const textureUnits: RenderWrapper = (canvas) => {
     gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_INT, 0);
   };
 
+  let mixAmount = 0.2;
+  const eventQueue: RenderEvent[] = [];
+
+  function changeMixAmount(event: ChangeMixAmountEvent) {
+    if (event.type !== "change-mix-amount") {
+      return;
+    }
+    switch (event.payload) {
+      case "increase":
+        mixAmount = Math.min(mixAmount + 0.1, 1.0);
+        break;
+      case "decrease":
+        mixAmount = Math.max(mixAmount - 0.1, 0.0);
+        break;
+    }
+  }
+
+  function processKeyboardEvents() {
+    if (!eventQueue.length) {
+      return;
+    }
+
+    while (eventQueue.length > 0) {
+      const event = eventQueue.shift();
+      if (event?.type === "change-mix-amount") {
+        changeMixAmount(event);
+      }
+    }
+  }
+
+  function updateEventQueue(event: KeyboardEvent) {
+    if (event.key === "ArrowUp") {
+      eventQueue.push({ type: "change-mix-amount", payload: "increase" });
+    } else if (event.key === "ArrowDown") {
+      eventQueue.push({ type: "change-mix-amount", payload: "decrease" });
+    }
+  }
+
+  const keydownHandlerCleanup = setupKeydownHandler(canvas, updateEventQueue);
+
+  // The id of each requestAnimationFrame call, used to cancel the animation on cleanup
+  let requestId: number;
   function render(gl: WebGL2RenderingContext, canvas: HTMLCanvasElement) {
     if (!sceneObject) {
       return;
     }
 
     clearCanvasViewport(gl);
+    processKeyboardEvents();
 
     gl.bindVertexArray(sceneObject.vertexArrayObject);
     gl.useProgram(sceneObject.shaderProgram);
+
+    setUniform(gl, sceneObject.shaderProgram, {
+      name: "mixAmount",
+      type: "float",
+      value: mixAmount
+    });
 
     if (!sceneObject.draw) {
       alert("Cannot draw scene object.");
@@ -96,12 +161,17 @@ const textureUnits: RenderWrapper = (canvas) => {
     }
 
     sceneObject.draw();
-    requestAnimationFrame(() => render(gl, canvas));
+    requestId = requestAnimationFrame(() => render(gl, canvas));
   }
 
   resizeCanvas(canvas, gl, window.innerWidth, window.innerHeight);
-  requestAnimationFrame(() => render(gl, canvas));
-  return cleanup;
+  requestId = requestAnimationFrame(() => render(gl, canvas));
+
+  return () => {
+    resizeHandlerCleanup();
+    keydownHandlerCleanup();
+    cancelAnimationFrame(requestId);
+  };
 };
 
 export default textureUnits;

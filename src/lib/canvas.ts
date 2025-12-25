@@ -12,22 +12,31 @@ export function resizeCanvas(
   gl.viewport(0, 0, width, height);
 }
 
+function setupResizeHandler(canvas: HTMLCanvasElement, gl: WebGL2RenderingContext) {
+  const off = on(window, "resize", () => {
+    resizeCanvas(canvas, gl, window.innerWidth, window.innerHeight);
+  });
+
+  return off;
+}
+
+export function setupKeydownHandler(
+  canvas: HTMLCanvasElement,
+  callback: (event: KeyboardEvent) => void
+) {
+  const off = on(canvas, "keydown", callback);
+  return off;
+}
+
 export function setupWebGLContextWithCanvasResize(canvas: HTMLCanvasElement) {
   const gl = canvas.getContext("webgl2");
   if (!gl) {
     alert("WebGL2 support is unavailable.");
     return null;
   }
+  const off = setupResizeHandler(canvas, gl);
 
-  const off = on(window, "resize", () => {
-    resizeCanvas(canvas, gl, window.innerWidth, window.innerHeight);
-  });
-
-  const cleanup = () => {
-    off();
-  };
-
-  return { gl, cleanup };
+  return { gl, cleanup: off };
 }
 
 type ClearOptions = {

@@ -7,11 +7,11 @@ out vec4 fragmentColour;
 
 uniform sampler2D texture0;
 uniform sampler2D texture1;
+uniform float mixAmount;
 
 void main() {
     fragmentColour = mix(
         texture(texture0, vertexTexCoord),
         texture(texture1, vertexTexCoord), 
-        0.2
-    );
+        clamp(mixAmount, 0.0f, 1.0f));
 }
