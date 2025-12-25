@@ -1,12 +1,13 @@
 import { type ShaderSources } from "~/lib/shaders";
-import vertexShaderSource from "~/routes/hello-triangle/hello-triangle.vert?raw";
-import fragmentShaderSource from "~/routes/hello-triangle/hello-triangle.frag?raw";
+import vertexShaderSource from "~/lib/scenes/hello-triangle/hello-triangle.vert?raw";
+import fragmentShaderSource from "~/lib/scenes/hello-triangle/hello-triangle.frag?raw";
 import { sizeof } from "~/lib/sizeof";
 import type { Geometry, VertexAttributeConfig } from "~/lib/geometry";
 import { clearCanvasViewport, resizeCanvas, setupWebGLContextWithCanvasResize } from "~/lib/canvas";
 import { configureSceneObject } from "~/lib/scene-object";
+import type { RenderWrapper } from "~/lib/render";
 
-export function helloTriangle(canvas: HTMLCanvasElement): () => void {
+const helloTriangle: RenderWrapper = (canvas) => {
   const result = setupWebGLContextWithCanvasResize(canvas);
   if (!result) {
     return () => {};
@@ -74,4 +75,6 @@ export function helloTriangle(canvas: HTMLCanvasElement): () => void {
   resizeCanvas(canvas, gl, window.innerWidth, window.innerHeight);
   requestAnimationFrame(() => render(gl, canvas));
   return cleanup;
-}
+};
+
+export default helloTriangle;

@@ -1,48 +1,55 @@
 <script lang="ts">
   import { Menu, X } from "@lucide/svelte";
   import { page } from "$app/state";
+  import { sceneDetails } from "~/lib/render";
 
-  const paths = [
-    { href: "/", name: "Home" },
-    { href: "/hello-triangle", name: "Hello Triangle" },
-    { href: "/hello-triangle-indexed", name: "Hello Triangle (indexed)" }
-  ];
+  const { sceneName } = $derived(page.params);
   const currentPath = $derived(page.url.pathname);
-  const selectedPath = $derived(paths.find((path) => path.href === currentPath));
+  const selectedPath = $derived(sceneDetails.find((details) => details.route === sceneName));
 
   let sidebarOpen = $state(false);
-  function toggleSidebar() {
-    sidebarOpen = !sidebarOpen;
+
+  function openSidebar() {
+    sidebarOpen = true;
+  }
+
+  function closeSidebar() {
+    sidebarOpen = false;
   }
 </script>
 
-<div class="absolute top-0 left-0 z-30 flex w-full items-center justify-between p-8">
-  <div>{selectedPath?.name ?? currentPath}</div>
-  <button aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"} onclick={toggleSidebar}>
-    {#if sidebarOpen}
-      <X />
-    {:else}
-      <Menu />
-    {/if}
+<div class="absolute top-8 left-8">{selectedPath?.name ?? currentPath}</div>
+{#if !sidebarOpen}
+  <button class="absolute top-8 right-8" aria-label={"Open sidebar"} onclick={openSidebar}>
+    <Menu />
   </button>
-</div>
+{/if}
+
 {#if sidebarOpen}
   <div
-    class="absolute top-0 right-0 z-10 min-h-screen min-w-screen backdrop-blur"
+    class="absolute top-0 right-0 z-20 min-h-screen min-w-screen backdrop-blur"
     role="presentation"
   >
-    <nav class="absolute top-0 right-0 z-20 min-h-screen w-xs bg-blue-200 p-4 dark:bg-blue-800">
-      <ul class="relative top-16 list-disc ps-4">
-        {#each paths as { href, name }}
-          <li>
-            <a
-              {href}
-              onclick={() => (sidebarOpen = false)}
-              class={["underline", currentPath === href && "font-bold"]}>{name}</a
-            >
-          </li>
-        {/each}
-      </ul>
-    </nav>
+    <div class="absolute top-0 right-0 z-30 min-h-screen w-xs bg-blue-200 px-4 dark:bg-blue-800">
+      <button class="absolute top-8 right-8" aria-label={"Close sidebar"} onclick={closeSidebar}>
+        <X />
+      </button>
+      <nav class="relative top-16">
+        <a href="/" class="text-xl underline underline-offset-8" onclick={closeSidebar}
+          >Graphics with WebGL</a
+        >
+        <ul class="mt-4 list-disc ps-4">
+          {#each sceneDetails as { route, name }}
+            <li>
+              <a
+                href={`/scenes/${route}`}
+                onclick={closeSidebar}
+                class={["underline", currentPath === route && "font-bold"]}>{name}</a
+              >
+            </li>
+          {/each}
+        </ul>
+      </nav>
+    </div>
   </div>
 {/if}
