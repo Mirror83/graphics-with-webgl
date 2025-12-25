@@ -30,8 +30,7 @@ const textureUnits: RenderWrapper = (canvas) => {
     return () => {};
   }
 
-  const gl = result.gl;
-  let resizeHandlerCleanup = result.cleanup;
+  const { gl, resizeHandlerCleanup } = result;
 
   // prettier-ignore
   const vertices = new Float32Array([

@@ -34,9 +34,9 @@ export function setupWebGLContextWithCanvasResize(canvas: HTMLCanvasElement) {
     alert("WebGL2 support is unavailable.");
     return null;
   }
-  const off = setupResizeHandler(canvas, gl);
+  const resizeHandlerCleanup = setupResizeHandler(canvas, gl);
 
-  return { gl, cleanup: off };
+  return { gl, resizeHandlerCleanup };
 }
 
 type ClearOptions = {

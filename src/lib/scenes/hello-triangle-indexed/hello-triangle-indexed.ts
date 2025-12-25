@@ -11,7 +11,7 @@ const helloTriangleIndexed: RenderWrapper = (canvas) => {
     return () => {};
   }
 
-  const { gl, cleanup } = contextAndCleanup;
+  const { gl, resizeHandlerCleanup } = contextAndCleanup;
 
   // prettier-ignore
   const vertices = new Float32Array([
@@ -52,7 +52,7 @@ const helloTriangleIndexed: RenderWrapper = (canvas) => {
   const sceneObject = configureSceneObject(gl, geometry, shaderSources);
   if (!sceneObject) {
     alert("Cannot configure geometry");
-    return cleanup;
+    return resizeHandlerCleanup;
   }
 
   sceneObject.draw = function () {
@@ -64,6 +64,7 @@ const helloTriangleIndexed: RenderWrapper = (canvas) => {
     gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_INT, 0);
   };
 
+  let requestId: number;
   function render(gl: WebGL2RenderingContext, canvas: HTMLCanvasElement) {
     if (!sceneObject) {
       return;
@@ -84,9 +85,12 @@ const helloTriangleIndexed: RenderWrapper = (canvas) => {
   }
 
   resizeCanvas(canvas, gl, window.innerWidth, window.innerHeight);
-  requestAnimationFrame(() => render(gl, canvas));
+  requestId = requestAnimationFrame(() => render(gl, canvas));
 
-  return cleanup;
+  return () => {
+    resizeHandlerCleanup();
+    cancelAnimationFrame(requestId);
+  };
 };
 
 export default helloTriangleIndexed;

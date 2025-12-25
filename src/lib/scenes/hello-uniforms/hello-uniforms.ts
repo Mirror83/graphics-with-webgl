@@ -13,7 +13,7 @@ const helloUniforms: RenderWrapper = (canvas) => {
     return () => {};
   }
 
-  const { gl, cleanup } = result;
+  const { gl, resizeHandlerCleanup } = result;
 
   // prettier-ignore
   const vertices = new Float32Array([
@@ -41,13 +41,14 @@ const helloUniforms: RenderWrapper = (canvas) => {
   const sceneObject = configureSceneObject(gl, geometry, shaderSources);
   if (!sceneObject) {
     alert("Unable to configure geometry");
-    return cleanup;
+    return resizeHandlerCleanup;
   }
 
   sceneObject.draw = function () {
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   };
 
+  let requestId: number;
   function render(gl: WebGL2RenderingContext, canvas: HTMLCanvasElement, timeInSeconds: number) {
     if (!sceneObject) {
       return;
@@ -70,13 +71,19 @@ const helloUniforms: RenderWrapper = (canvas) => {
     });
 
     sceneObject.draw();
-    requestAnimationFrame((timeInMilliseconds) => render(gl, canvas, timeInMilliseconds / 1000));
+    requestId = requestAnimationFrame((timeInMilliseconds) =>
+      render(gl, canvas, timeInMilliseconds / 1000)
+    );
   }
 
   resizeCanvas(canvas, gl, window.innerWidth, window.innerHeight);
-  requestAnimationFrame((timeInMilliseconds) => render(gl, canvas, timeInMilliseconds / 1000));
-
-  return cleanup;
+  requestId = requestAnimationFrame((timeInMilliseconds) =>
+    render(gl, canvas, timeInMilliseconds / 1000)
+  );
+  return () => {
+    resizeHandlerCleanup();
+    cancelAnimationFrame(requestId);
+  };
 };
 
 export default helloUniforms;

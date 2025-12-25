@@ -13,7 +13,7 @@ const helloTextures: RenderWrapper = (canvas) => {
     return () => {};
   }
 
-  const { gl, cleanup } = result;
+  const { gl, resizeHandlerCleanup } = result;
 
   // prettier-ignore
   const vertices = new Float32Array([
@@ -74,7 +74,7 @@ const helloTextures: RenderWrapper = (canvas) => {
   const sceneObject = configureSceneObject(gl, geometry, shaderSources);
   if (!sceneObject) {
     alert("Unable to configure geometry");
-    return cleanup;
+    return resizeHandlerCleanup;
   }
 
   sceneObject.draw = function () {
@@ -85,6 +85,7 @@ const helloTextures: RenderWrapper = (canvas) => {
     gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_INT, 0);
   };
 
+  let requestId: number;
   function render(gl: WebGL2RenderingContext, canvas: HTMLCanvasElement) {
     if (!sceneObject) {
       return;
@@ -105,8 +106,11 @@ const helloTextures: RenderWrapper = (canvas) => {
   }
 
   resizeCanvas(canvas, gl, window.innerWidth, window.innerHeight);
-  requestAnimationFrame(() => render(gl, canvas));
-  return cleanup;
+  requestId = requestAnimationFrame(() => render(gl, canvas));
+  return () => {
+    resizeHandlerCleanup();
+    cancelAnimationFrame(requestId);
+  };
 };
 
 export default helloTextures;

@@ -13,7 +13,7 @@ const helloTriangle: RenderWrapper = (canvas) => {
     return () => {};
   }
 
-  const { gl, cleanup } = result;
+  const { gl, resizeHandlerCleanup } = result;
 
   // prettier-ignore
   const vertices = new Float32Array([
@@ -46,13 +46,13 @@ const helloTriangle: RenderWrapper = (canvas) => {
   const sceneObject = configureSceneObject(gl, geometry, shaderSources);
   if (!sceneObject) {
     alert("Unable to configure geometry");
-    return cleanup;
+    return resizeHandlerCleanup;
   }
 
   sceneObject.draw = function () {
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   };
-
+  let requestId: number;
   function render(gl: WebGL2RenderingContext, canvas: HTMLCanvasElement) {
     if (!sceneObject) {
       return;
@@ -73,8 +73,11 @@ const helloTriangle: RenderWrapper = (canvas) => {
   }
 
   resizeCanvas(canvas, gl, window.innerWidth, window.innerHeight);
-  requestAnimationFrame(() => render(gl, canvas));
-  return cleanup;
+  requestId = requestAnimationFrame(() => render(gl, canvas));
+  return () => {
+    resizeHandlerCleanup();
+    cancelAnimationFrame(requestId);
+  };
 };
 
 export default helloTriangle;
