@@ -6,5 +6,7 @@
 </script>
 
 <main class={`bg-[${bgColour}] text-white`}>
-  <canvas {@attach data.renderWrapper}>{data.description}</canvas>
+  <canvas tabindex="0" class="focus:outline-0" {@attach data.renderWrapper}
+    >{data.description}</canvas
+  >
 </main>
