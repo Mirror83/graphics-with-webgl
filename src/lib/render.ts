@@ -27,5 +27,16 @@ export const sceneDetails: SceneDetails[] = [
     name: "More Attributes",
     route: "more-attributes",
     description: "A colourful triangle with per-vertex colours interpolated across its surface"
+  },
+  {
+    name: "Hello Textures",
+    route: "hello-textures",
+    description: "A rectangle textured with an image of a wooden container"
+  },
+  {
+    name: "Texture Units",
+    route: "texture-units",
+    description:
+      "A rectangle textured with two textures (a wooden container and a smiley face picture) using texture units"
   }
 ];

@@ -9,6 +9,7 @@ export type VertexAttributeConfig = {
 
 export type Geometry = {
   vertices: Float32Array;
-  indices?: Uint32Array;
   attributeConfigs: VertexAttributeConfig[];
+  indices?: Uint32Array;
+  textures?: WebGLTexture[];
 };

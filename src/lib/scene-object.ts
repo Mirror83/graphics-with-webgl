@@ -1,5 +1,5 @@
 import type { Geometry } from "~/lib/geometry";
-import { type ShaderSources, createShaderProgram } from "~/lib/shaders";
+import { type ShaderSources, createShaderProgram, setUniform } from "~/lib/shaders";
 
 export type SceneObject = {
   vertexArrayObject: WebGLVertexArrayObject;
@@ -45,6 +45,13 @@ export function configureSceneObject(
     );
     gl.enableVertexAttribArray(location);
   }
+
+  gl.useProgram(shaderProgram);
+  for (let i = 0; geometry.textures && i < geometry.textures.length; i++) {
+    setUniform(gl, shaderProgram, { name: `texture${i}`, type: "int", value: i });
+  }
+  // Unbind program to prevent capturing another object's config.
+  gl.useProgram(null);
 
   // Unbind vertex array to prevent capturing another object's config.
   gl.bindVertexArray(null);
