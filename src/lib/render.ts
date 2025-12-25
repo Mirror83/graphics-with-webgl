@@ -17,5 +17,10 @@ export const sceneDetails: SceneDetails[] = [
     name: "Hello Triangle Indexed",
     route: "hello-triangle-indexed",
     description: "An orange-ish rectangle"
+  },
+  {
+    name: "Hello Uniforms",
+    route: "hello-uniforms",
+    description: "A triangle with a uniform colour that changes over time"
   }
 ];

@@ -1,4 +1,4 @@
-import type { mat4 } from "gl-matrix";
+import type { mat4, vec3, vec4 } from "gl-matrix";
 
 type ShaderType =
   | WebGL2RenderingContext["VERTEX_SHADER"]
@@ -16,7 +16,12 @@ type NumberUniformValue = {
 
 type Vec3UniformValue = {
   type: "vec3";
-  value: [number, number, number];
+  value: vec3;
+};
+
+type Vec4UniformValue = {
+  type: "vec4";
+  value: vec4;
 };
 
 type Mat4UniformValue = {
@@ -24,7 +29,7 @@ type Mat4UniformValue = {
   value: mat4;
 };
 
-type UniformValue = NumberUniformValue | Vec3UniformValue | Mat4UniformValue;
+type UniformValue = NumberUniformValue | Vec3UniformValue | Vec4UniformValue | Mat4UniformValue;
 
 type UniformDetails = {
   name: string;
@@ -104,10 +109,40 @@ export function setUniform(
     case "vec3":
       gl.uniform3fv(location, details.value);
       break;
+    case "vec4":
+      gl.uniform4fv(location, details.value);
+      break;
     case "mat4-float":
       gl.uniformMatrix4fv(location, false, details.value);
       break;
     default:
       console.warn(`Unsupported uniform type: ${details}`);
+  }
+}
+
+export async function getVertexShaderSourceFromModule(sceneName: string): Promise<string> {
+  const module = await import(`~/lib/scenes/${sceneName}/${sceneName}.vert?raw`);
+  return module.default as string;
+}
+
+export async function getFragmentShaderSourceFromModule(sceneName: string): Promise<string> {
+  const module = await import(`~/lib/scenes/${sceneName}/${sceneName}.frag?raw`);
+  return module.default as string;
+}
+
+export async function getShaderSources(sceneName: string): Promise<ShaderSources> {
+  try {
+    const [fragmentSource, vertexSource] = await Promise.all([
+      getFragmentShaderSourceFromModule(sceneName),
+      getVertexShaderSourceFromModule(sceneName)
+    ]);
+
+    return {
+      fragment: fragmentSource,
+      vertex: vertexSource
+    };
+  } catch (error) {
+    console.error(`Error loading shader sources for scene "${sceneName}":`, error);
+    throw error;
   }
 }
