@@ -40,20 +40,14 @@ export function setupWebGLContextWithCanvasResize(canvas: HTMLCanvasElement) {
 }
 
 type ClearOptions = {
-  clearColor: Color;
-  enableDepthTesting: boolean;
+  clearColor?: Color;
+  enableDepthTesting?: boolean;
 };
 
-export function clearCanvasViewport(
-  gl: WebGL2RenderingContext,
-  options: ClearOptions = {
-    clearColor: defaultClearColor,
-    enableDepthTesting: false
-  }
-) {
-  const clearColor = options.clearColor;
+export function clearCanvasViewport(gl: WebGL2RenderingContext, options?: ClearOptions) {
+  const clearColor = options?.clearColor ?? defaultClearColor;
   gl.clearColor(clearColor.r, clearColor.g, clearColor.b, clearColor.a);
-  if (options.enableDepthTesting) {
+  if (options?.enableDepthTesting) {
     gl.enable(gl.DEPTH_TEST);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
   } else {
