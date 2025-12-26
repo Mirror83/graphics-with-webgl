@@ -47,5 +47,23 @@ export const sceneDetails: SceneDetails[] = [
     route: "hello-transformations",
     description:
       "Two rectangles; one at the top-left, and one at the bottom-right of the screen. The first one scales up and down, and the other rotates over time."
+  },
+  {
+    name: "Hello 3D (No Depth Test)",
+    route: "hello-3d-no-depth-test",
+    description:
+      "A rotating 3D cube with each face textured with an image of a wooden container and a smiley face (with depth-testing disabled, thus causing some faces to be rendered over others.)"
+  },
+  {
+    name: "Hello 3D",
+    route: "hello-3d",
+    description:
+      "A rotating 3D cube with each face textured with an image of a wooden container and a smiley face (and depth-testing enabled)."
+  },
+  {
+    name: "More Cubes",
+    route: "more-cubes",
+    description:
+      "Ten 3D cubes with each face textured with an image of a wooden container and a smiley face (and depth-testing enabled). Four of them rotate over time."
   }
 ];
