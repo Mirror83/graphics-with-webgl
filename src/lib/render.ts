@@ -5,6 +5,7 @@ type SceneDetails = {
   name: string;
   route: string;
   description?: string;
+  inputInstructions?: string;
 };
 
 export const sceneDetails: SceneDetails[] = [
@@ -37,6 +38,8 @@ export const sceneDetails: SceneDetails[] = [
     name: "Texture Units",
     route: "texture-units",
     description:
-      "A rectangle textured with two textures (a wooden container and a smiley face picture) using texture units"
+      "A rectangle textured with two textures (a wooden container and a smiley face picture) using texture units",
+    inputInstructions:
+      "Click on the canvas then use the up and down arrow keys to change the blend between the wooden container and smiley face picture. (Sorry mobile guys.)"
   }
 ];
