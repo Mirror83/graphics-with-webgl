@@ -3,11 +3,9 @@ import { setupWebGLContextWithCanvasResize, clearCanvasViewport, resizeCanvas } 
 import type { VertexAttributeConfig, Geometry } from "~/lib/geometry";
 import type { RenderWrapper } from "~/lib/render";
 import { configureSceneObject } from "~/lib/scene-object";
-import { getShaderSources, setUniform, type ShaderSources } from "~/lib/shaders";
+import { setUniform } from "~/lib/shaders";
 
-const shaderSources: ShaderSources = await getShaderSources("hello-uniforms");
-
-const helloUniforms: RenderWrapper = (canvas) => {
+const helloUniforms: RenderWrapper = (canvas, shaderSources) => {
   const result = setupWebGLContextWithCanvasResize(canvas);
   if (!result) {
     return () => {};

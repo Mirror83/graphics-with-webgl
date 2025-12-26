@@ -1,4 +1,4 @@
-import { getShaderSources, setUniform, type ShaderSources } from "~/lib/shaders";
+import { setUniform } from "~/lib/shaders";
 import type { Geometry, VertexAttributeConfig } from "~/lib/geometry";
 import { clearCanvasViewport, resizeCanvas, setupWebGLContextWithCanvasResize } from "~/lib/canvas";
 import { configureSceneObject } from "~/lib/scene-object";
@@ -6,9 +6,7 @@ import type { RenderWrapper } from "~/lib/render";
 import { loadTexture } from "~/lib/textures";
 import { glMatrix, mat4, vec3 } from "gl-matrix";
 
-const shaderSources: ShaderSources = await getShaderSources("more-cubes");
-
-const moreCubes: RenderWrapper = (canvas) => {
+const moreCubes: RenderWrapper = (canvas, shaderSources) => {
   const result = setupWebGLContextWithCanvasResize(canvas);
   if (!result) {
     return () => {};

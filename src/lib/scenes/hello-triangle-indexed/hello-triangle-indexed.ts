@@ -1,11 +1,9 @@
 import { clearCanvasViewport, resizeCanvas, setupWebGLContextWithCanvasResize } from "~/lib/canvas";
 import type { Geometry, VertexAttributeConfig } from "~/lib/geometry";
 import { configureSceneObject } from "~/lib/scene-object";
-import vertexShaderSource from "~/lib/scenes/hello-triangle/hello-triangle.vert?raw";
-import fragmentShaderSource from "~/lib/scenes/hello-triangle/hello-triangle.frag?raw";
 import type { RenderWrapper } from "~/lib/render";
 
-const helloTriangleIndexed: RenderWrapper = (canvas) => {
+const helloTriangleIndexed: RenderWrapper = (canvas, shaderSources) => {
   const contextAndCleanup = setupWebGLContextWithCanvasResize(canvas);
   if (!contextAndCleanup) {
     return () => {};
@@ -42,11 +40,6 @@ const helloTriangleIndexed: RenderWrapper = (canvas) => {
     vertices,
     indices,
     attributeConfigs
-  };
-
-  const shaderSources = {
-    vertex: vertexShaderSource,
-    fragment: fragmentShaderSource
   };
 
   const sceneObject = configureSceneObject(gl, geometry, shaderSources);

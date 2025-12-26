@@ -1,12 +1,9 @@
-import { getShaderSources, type ShaderSources } from "~/lib/shaders";
 import type { Geometry, VertexAttributeConfig } from "~/lib/geometry";
 import { clearCanvasViewport, resizeCanvas, setupWebGLContextWithCanvasResize } from "~/lib/canvas";
 import { configureSceneObject } from "~/lib/scene-object";
 import type { RenderWrapper } from "~/lib/render";
 
-const shaderSources: ShaderSources = await getShaderSources("more-attributes");
-
-const moreAttributes: RenderWrapper = (canvas) => {
+const moreAttributes: RenderWrapper = (canvas, shaderSources) => {
   const result = setupWebGLContextWithCanvasResize(canvas);
   if (!result) {
     return () => {};

@@ -1,14 +1,12 @@
-import { getShaderSources, setUniform, type ShaderSources } from "~/lib/shaders";
-import type { Geometry, VertexAttributeConfig } from "~/lib/geometry";
-import { clearCanvasViewport, resizeCanvas, setupWebGLContextWithCanvasResize } from "~/lib/canvas";
-import { configureSceneObject } from "~/lib/scene-object";
-import type { RenderWrapper } from "~/lib/render";
-import { loadTexture } from "~/lib/textures";
 import { glMatrix, mat4, vec3 } from "gl-matrix";
+import { clearCanvasViewport, resizeCanvas, setupWebGLContextWithCanvasResize } from "~/lib/canvas";
+import type { Geometry, VertexAttributeConfig } from "~/lib/geometry";
+import type { RenderWrapper } from "~/lib/render";
+import { configureSceneObject } from "~/lib/scene-object";
+import { setUniform } from "~/lib/shaders";
+import { loadTexture } from "~/lib/textures";
 
-const shaderSources: ShaderSources = await getShaderSources("hello-3d");
-
-const hello3d: RenderWrapper = (canvas) => {
+const hello3d: RenderWrapper = (canvas, shaderSources) => {
   const result = setupWebGLContextWithCanvasResize(canvas);
   if (!result) {
     return () => {};

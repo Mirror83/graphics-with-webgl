@@ -1,4 +1,4 @@
-import { getShaderSources, setUniform, type ShaderSources } from "~/lib/shaders";
+import { setUniform } from "~/lib/shaders";
 import type { Geometry, VertexAttributeConfig } from "~/lib/geometry";
 import {
   clearCanvasViewport,
@@ -9,8 +9,6 @@ import {
 import { configureSceneObject } from "~/lib/scene-object";
 import type { RenderWrapper } from "~/lib/render";
 import { loadTexture } from "~/lib/textures";
-
-const shaderSources: ShaderSources = await getShaderSources("texture-units");
 
 type ChangeMixAmountEvent =
   | {
@@ -24,7 +22,7 @@ type ChangeMixAmountEvent =
 
 type RenderEvent = ChangeMixAmountEvent;
 
-const textureUnits: RenderWrapper = (canvas) => {
+const textureUnits: RenderWrapper = (canvas, shaderSources) => {
   const result = setupWebGLContextWithCanvasResize(canvas);
   if (!result) {
     return () => {};

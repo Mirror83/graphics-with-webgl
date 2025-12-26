@@ -1,5 +1,10 @@
+import type { ShaderSources } from "~/lib/shaders";
+
 type EventHandlerCleanup = () => void;
-export type RenderWrapper = (canvas: HTMLCanvasElement) => EventHandlerCleanup;
+export type RenderWrapper = (
+  canvas: HTMLCanvasElement,
+  shaderSources: ShaderSources
+) => EventHandlerCleanup;
 
 type SceneDetails = {
   name: string;

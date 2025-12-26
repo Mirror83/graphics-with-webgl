@@ -1,4 +1,4 @@
-import { getShaderSources, setUniform, type ShaderSources } from "~/lib/shaders";
+import { setUniform } from "~/lib/shaders";
 import type { Geometry, VertexAttributeConfig } from "~/lib/geometry";
 import { clearCanvasViewport, resizeCanvas, setupWebGLContextWithCanvasResize } from "~/lib/canvas";
 import { configureSceneObject } from "~/lib/scene-object";
@@ -6,9 +6,7 @@ import type { RenderWrapper } from "~/lib/render";
 import { loadTexture } from "~/lib/textures";
 import { mat4, vec3 } from "gl-matrix";
 
-const shaderSources: ShaderSources = await getShaderSources("hello-transformations");
-
-const helloTransformations: RenderWrapper = (canvas) => {
+const helloTransformations: RenderWrapper = (canvas, shaderSources) => {
   const result = setupWebGLContextWithCanvasResize(canvas);
   if (!result) {
     return () => {};
