@@ -16,6 +16,11 @@
   const bgColour = toHexColourString(defaultClearColor);
 </script>
 
+<svelte:head>
+  <title>{data.name}</title>
+  <meta name="description" content={data.description} />
+</svelte:head>
+
 <main class={`min-h-screen text-blue-50`} style:background-color={bgColour}>
   <canvas tabindex="0" class="focus:outline-0" {@attach data.renderWrapper}
     >{data.description}</canvas
