@@ -5,7 +5,7 @@
   const bgColour = toHexColourString(defaultClearColor);
 </script>
 
-<main class={`text-white`} style:background-color={bgColour}>
+<main class={`min-h-screen text-blue-50`} style:background-color={bgColour}>
   <canvas tabindex="0" class="focus:outline-0" {@attach data.renderWrapper}
     >{data.description}</canvas
   >

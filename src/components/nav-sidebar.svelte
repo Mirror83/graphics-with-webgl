@@ -18,9 +18,15 @@
   }
 </script>
 
-<div class="absolute top-8 left-8">{selectedPath?.name ?? currentPath}</div>
+<div class={["absolute top-8 left-8", sceneName && "text-blue-50"]}>
+  {selectedPath?.name ?? currentPath}
+</div>
 {#if !sidebarOpen}
-  <button class="absolute top-8 right-8" aria-label={"Open sidebar"} onclick={openSidebar}>
+  <button
+    class={["absolute top-8 right-8", sceneName && "text-blue-50"]}
+    aria-label={"Open sidebar"}
+    onclick={openSidebar}
+  >
     <Menu />
   </button>
 {/if}
