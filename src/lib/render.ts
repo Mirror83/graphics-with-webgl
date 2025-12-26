@@ -41,5 +41,11 @@ export const sceneDetails: SceneDetails[] = [
       "A rectangle textured with two textures (a wooden container and a smiley face picture) using texture units",
     inputInstructions:
       "Click on the canvas then use the up and down arrow keys to change the blend between the wooden container and smiley face picture. (Sorry mobile guys.)"
+  },
+  {
+    name: "Hello Transformations",
+    route: "hello-transformations",
+    description:
+      "Two rectangles; one at the top-left, and one at the bottom-right of the screen. The first one scales up and down, and the other rotates over time."
   }
 ];
