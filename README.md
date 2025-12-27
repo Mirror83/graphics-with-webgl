@@ -1,7 +1,7 @@
 # Graphics with WebGL
 
 This is an implementation of the concepts in [Learn OpenGL](https://learnopengl.com) using
-JavaScript and WebGL 3.0.
+JavaScript and [WebGL 2](https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API#webgl_2).
 
 ## Recommended IDE Setup
 
