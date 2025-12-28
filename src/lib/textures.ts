@@ -30,13 +30,16 @@ export function loadTexture(gl: WebGLRenderingContext, url: string): WebGLTextur
 
   const image = new Image();
   image.onload = function () {
-    gl.bindTexture(gl.TEXTURE_2D, texture);
-    // Flip image pixels into the bottom-to-top order that WebGL expects.
-    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-    gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, srcFormat, srcType, image);
-    gl.generateMipmap(gl.TEXTURE_2D);
-    // Unbind texture once done updating it.
-    gl.bindTexture(gl.TEXTURE_2D, null);
+    createImageBitmap(image, {
+      // Flip image pixels into the bottom-to-top order that WebGL expects.
+      imageOrientation: "flipY"
+    }).then((bitmap) => {
+      gl.bindTexture(gl.TEXTURE_2D, texture);
+      gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, srcFormat, srcType, bitmap);
+      gl.generateMipmap(gl.TEXTURE_2D);
+      // Unbind texture once done updating it.
+      gl.bindTexture(gl.TEXTURE_2D, null);
+    });
   };
   image.src = url;
 
