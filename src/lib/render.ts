@@ -70,5 +70,11 @@ export const sceneDetails: SceneDetails[] = [
     route: "more-cubes",
     description:
       "Ten 3D cubes with each face textured with an image of a wooden container and a smiley face (and depth-testing enabled). Four of them rotate over time."
+  },
+  {
+    name: "Camera circle",
+    route: "camera-circle",
+    description:
+      "Simulation of a camera going in a circle while looking at the center of the scene."
   }
 ];
