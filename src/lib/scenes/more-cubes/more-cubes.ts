@@ -197,6 +197,8 @@ const moreCubes: RenderWrapper = (canvas, shaderSources) => {
   );
 
   return () => {
+    gl.disable(gl.DEPTH_TEST);
+    gl.clear(gl.DEPTH_BUFFER_BIT);
     resizeHandlerCleanup();
     cancelAnimationFrame(requestId);
   };
