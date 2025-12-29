@@ -76,5 +76,11 @@ export const sceneDetails: SceneDetails[] = [
     route: "camera-circle",
     description:
       "Simulation of a camera going in a circle while looking at the center of the scene."
+  },
+  {
+    name: "Movable Camera",
+    route: "movable-camera",
+    description:
+      "Click on the canvas and then use the arrow keys to move the camera forward and backward, and strafe left and right."
   }
 ];
