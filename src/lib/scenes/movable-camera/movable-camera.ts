@@ -178,15 +178,19 @@ const moreCubes: RenderWrapper = (canvas, shaderSources) => {
 
   function moveCameraByKeyboardInput(event: KeyboardEvent) {
     switch (event.key) {
+      case "w":
       case "ArrowUp":
         camera.move(CameraDirection.Forward, deltaTime);
         break;
+      case "s":
       case "ArrowDown":
         camera.move(CameraDirection.Backward, deltaTime);
         break;
+      case "a":
       case "ArrowLeft":
         camera.move(CameraDirection.Left, deltaTime);
         break;
+      case "d":
       case "ArrowRight":
         camera.move(CameraDirection.Right, deltaTime);
         break;
