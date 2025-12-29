@@ -117,14 +117,6 @@ const moreCubes: RenderWrapper = (canvas, shaderSources) => {
 
   resizeCanvas(canvas, gl, window.innerWidth, window.innerHeight);
 
-  const projection = mat4.perspective(
-    mat4.create(),
-    glMatrix.toRadian(45),
-    canvas.width / canvas.height,
-    0.1,
-    100.0
-  );
-
   sceneObject.draw = function () {
     for (let i = 0; geometry.textures && i < geometry.textures.length; i++) {
       gl.activeTexture(gl.TEXTURE0 + i);
@@ -163,6 +155,27 @@ const moreCubes: RenderWrapper = (canvas, shaderSources) => {
     camera.lookAround(offset);
   }
 
+  function handleScrollWheelZoom(event: WheelEvent) {
+    console.debug("Wheel event:", event);
+    console.debug("camera controlOptions:", camera.controlOptions);
+    let deltaY: number;
+    switch (event.deltaMode) {
+      case WheelEvent.DOM_DELTA_PIXEL:
+        deltaY = event.deltaY;
+        break;
+      case WheelEvent.DOM_DELTA_LINE:
+        deltaY = event.deltaY * 16; // Approximate line height in pixels
+        break;
+      case WheelEvent.DOM_DELTA_PAGE:
+        deltaY = event.deltaY * 800; // Approximate page height in pixels
+        break;
+      default:
+        deltaY = event.deltaY;
+        break;
+    }
+    camera.zoom(deltaY * 0.01); // Scale down the scroll amount
+  }
+
   function moveCameraByKeyboardInput(event: KeyboardEvent) {
     switch (event.key) {
       case "ArrowUp":
@@ -184,13 +197,22 @@ const moreCubes: RenderWrapper = (canvas, shaderSources) => {
 
   const keydownCleanup = on(canvas, "keydown", moveCameraByKeyboardInput);
   const mouseDownCleanup = on(canvas, "mousedown", handleMouseDown);
-  const mouseUpCleanup = on(window, "mouseup", handleMouseUp);
-  const mouseMoveCleanup = on(window, "mousemove", handleMouseMove);
+  const mouseUpCleanup = on(canvas, "mouseup", handleMouseUp);
+  const mouseMoveCleanup = on(canvas, "mousemove", handleMouseMove);
+  const mouseScrollCleanup = on(
+    canvas,
+    "wheel",
+    handleScrollWheelZoom,
+    // This option is to improve scrolling performance.
+    // For more info, see https://github.com/RByers/EventListenerOptions/blob/gh-pages/explainer.md
+    { passive: true }
+  );
 
   function cleanupMouseHandlers() {
     mouseDownCleanup();
     mouseUpCleanup();
     mouseMoveCleanup();
+    mouseScrollCleanup();
   }
 
   function render(gl: WebGL2RenderingContext, canvas: HTMLCanvasElement, currentTime: number = 0) {
@@ -218,6 +240,14 @@ const moreCubes: RenderWrapper = (canvas, shaderSources) => {
       camera.position,
       vec3.add(vec3.create(), camera.position, camera.front),
       camera.up
+    );
+
+    const projection = mat4.perspective(
+      mat4.create(),
+      glMatrix.toRadian(camera.controlOptions.fov),
+      canvas.width / canvas.height,
+      0.1,
+      100.0
     );
 
     setUniform(gl, sceneObject.shaderProgram, {

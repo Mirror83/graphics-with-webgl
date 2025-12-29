@@ -11,7 +11,8 @@ const YAW = -90.0;
 const PITCH = 0.0;
 const SPEED = 2.5;
 const SENSITIVITY = 0.1;
-const ZOOM = 45.0;
+const FOV_MAX = 45.0;
+const FOV_MIN = 1.0;
 
 type EulerAngles = {
   yaw: number;
@@ -21,7 +22,8 @@ type EulerAngles = {
 type CameraControlOptions = {
   movementSpeed: number;
   mouseSensitivity: number;
-  zoom: number;
+  /* Field of view angle in degrees */
+  fov: number;
 };
 
 export class Camera {
@@ -38,7 +40,7 @@ export class Camera {
   controlOptions: CameraControlOptions = {
     movementSpeed: SPEED,
     mouseSensitivity: SENSITIVITY,
-    zoom: ZOOM
+    fov: FOV_MAX
   };
 
   constructor(
@@ -106,12 +108,13 @@ export class Camera {
     this.up = updatedVectors.up;
   }
 
-  processMouseScroll(yOffset: number) {
-    this.controlOptions.zoom -= yOffset;
-    if (this.controlOptions.zoom < 1.0) {
-      this.controlOptions.zoom = 1.0;
-    } else if (this.controlOptions.zoom > 45.0) {
-      this.controlOptions.zoom = 45.0;
+  zoom(yOffset: number) {
+    this.controlOptions.fov -= yOffset;
+    // Clamp the field of view to 45 degrees
+    if (this.controlOptions.fov < FOV_MIN) {
+      this.controlOptions.fov = FOV_MIN;
+    } else if (this.controlOptions.fov > FOV_MAX) {
+      this.controlOptions.fov = FOV_MAX;
     }
   }
 
