@@ -1,6 +1,6 @@
 import { glMatrix, mat4, vec2, vec3 } from "gl-matrix";
 
-enum CameraMovement {
+export enum CameraDirection {
   Forward,
   Backward,
   Left,
@@ -11,7 +11,8 @@ const YAW = -90.0;
 const PITCH = 0.0;
 const SPEED = 2.5;
 const SENSITIVITY = 0.1;
-const ZOOM = 45.0;
+const FOV_MAX = 45.0;
+const FOV_MIN = 1.0;
 
 type EulerAngles = {
   yaw: number;
@@ -21,10 +22,11 @@ type EulerAngles = {
 type CameraControlOptions = {
   movementSpeed: number;
   mouseSensitivity: number;
-  zoom: number;
+  /* Field of view angle in degrees */
+  fov: number;
 };
 
-class Camera {
+export class Camera {
   position: vec3 = vec3.fromValues(0.0, 0.0, 0.0);
   front: vec3 = vec3.fromValues(0.0, 0.0, -1.0);
   up: vec3 = vec3.fromValues(0.0, 1.0, 0.0);
@@ -38,7 +40,7 @@ class Camera {
   controlOptions: CameraControlOptions = {
     movementSpeed: SPEED,
     mouseSensitivity: SENSITIVITY,
-    zoom: ZOOM
+    fov: FOV_MAX
   };
 
   constructor(
@@ -68,23 +70,25 @@ class Camera {
     );
   }
 
-  processKeyboardInput(direction: CameraMovement, deltaTime: number) {
+  move(direction: CameraDirection, deltaTime: number) {
     const velocity = this.controlOptions.movementSpeed * deltaTime;
     switch (direction) {
-      case CameraMovement.Forward:
+      case CameraDirection.Forward:
         vec3.add(this.position, this.position, vec3.scale(vec3.create(), this.front, velocity));
         break;
-      case CameraMovement.Backward:
+      case CameraDirection.Backward:
         vec3.sub(this.position, this.position, vec3.scale(vec3.create(), this.front, velocity));
-      case CameraMovement.Left:
+        break;
+      case CameraDirection.Left:
         vec3.sub(this.position, this.position, vec3.scale(vec3.create(), this.right, velocity));
-      case CameraMovement.Right:
+        break;
+      case CameraDirection.Right:
         vec3.add(this.position, this.position, vec3.scale(vec3.create(), this.right, velocity));
         break;
     }
   }
 
-  processMouseMovement(offset: { x: number; y: number }, constrainPitch: boolean = true) {
+  lookAround(offset: { x: number; y: number }, constrainPitch: boolean = true) {
     const xOffset = offset.x * this.controlOptions.mouseSensitivity;
     const yOffset = offset.y * this.controlOptions.mouseSensitivity;
     this.eulerAngles.yaw += xOffset;
@@ -104,12 +108,13 @@ class Camera {
     this.up = updatedVectors.up;
   }
 
-  processMouseScroll(yOffset: number) {
-    this.controlOptions.zoom -= yOffset;
-    if (this.controlOptions.zoom < 1.0) {
-      this.controlOptions.zoom = 1.0;
-    } else if (this.controlOptions.zoom > 45.0) {
-      this.controlOptions.zoom = 45.0;
+  zoom(yOffset: number) {
+    this.controlOptions.fov -= yOffset;
+    // Clamp the field of view to 45 degrees
+    if (this.controlOptions.fov < FOV_MIN) {
+      this.controlOptions.fov = FOV_MIN;
+    } else if (this.controlOptions.fov > FOV_MAX) {
+      this.controlOptions.fov = FOV_MAX;
     }
   }
 
