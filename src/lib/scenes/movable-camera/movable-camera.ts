@@ -138,6 +138,30 @@ const moreCubes: RenderWrapper = (canvas, shaderSources) => {
   let camera = new Camera();
   let previousTime = 0;
   let deltaTime = 0;
+  let lastMousePos = { x: canvas.width / 2, y: canvas.height / 2 };
+  let isMouseDown = false;
+
+  function handleMouseDown(event: MouseEvent) {
+    lastMousePos = { x: event.clientX, y: event.clientY };
+    isMouseDown = true;
+  }
+
+  function handleMouseUp() {
+    isMouseDown = false;
+  }
+
+  function handleMouseMove(event: MouseEvent) {
+    if (!isMouseDown) {
+      return;
+    }
+    const currentMousePos = { x: event.clientX, y: event.clientY };
+    const offset = {
+      x: currentMousePos.x - lastMousePos.x,
+      y: lastMousePos.y - currentMousePos.y // Reversed since y-coordinates go from bottom to top
+    };
+    lastMousePos = currentMousePos;
+    camera.lookAround(offset);
+  }
 
   function moveCameraByKeyboardInput(event: KeyboardEvent) {
     switch (event.key) {
@@ -159,6 +183,16 @@ const moreCubes: RenderWrapper = (canvas, shaderSources) => {
   }
 
   const keydownCleanup = on(canvas, "keydown", moveCameraByKeyboardInput);
+  const mouseDownCleanup = on(canvas, "mousedown", handleMouseDown);
+  const mouseUpCleanup = on(window, "mouseup", handleMouseUp);
+  const mouseMoveCleanup = on(window, "mousemove", handleMouseMove);
+
+  function cleanupMouseHandlers() {
+    mouseDownCleanup();
+    mouseUpCleanup();
+    mouseMoveCleanup();
+  }
+
   function render(gl: WebGL2RenderingContext, canvas: HTMLCanvasElement, currentTime: number = 0) {
     if (!sceneObject) {
       return;
@@ -228,6 +262,7 @@ const moreCubes: RenderWrapper = (canvas, shaderSources) => {
     gl.disable(gl.DEPTH_TEST);
     gl.clear(gl.DEPTH_BUFFER_BIT);
     keydownCleanup();
+    cleanupMouseHandlers();
     resizeHandlerCleanup();
     cancelAnimationFrame(requestId);
   };

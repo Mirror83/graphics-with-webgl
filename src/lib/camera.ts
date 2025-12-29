@@ -86,7 +86,7 @@ export class Camera {
     }
   }
 
-  processMouseMovement(offset: { x: number; y: number }, constrainPitch: boolean = true) {
+  lookAround(offset: { x: number; y: number }, constrainPitch: boolean = true) {
     const xOffset = offset.x * this.controlOptions.mouseSensitivity;
     const yOffset = offset.y * this.controlOptions.mouseSensitivity;
     this.eulerAngles.yaw += xOffset;

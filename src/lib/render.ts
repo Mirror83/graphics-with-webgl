@@ -81,6 +81,6 @@ export const sceneDetails: SceneDetails[] = [
     name: "Movable Camera",
     route: "movable-camera",
     description:
-      "Click on the canvas and then use the arrow keys to move the camera forward and backward, and strafe left and right."
+      "Click on the canvas and then use the arrow keys to move the camera forward and backward, and strafe left and right. Click and drag the mouse to look around. (Sorry mobile guys.)"
   }
 ];
