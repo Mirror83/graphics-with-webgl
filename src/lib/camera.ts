@@ -1,6 +1,6 @@
 import { glMatrix, mat4, vec2, vec3 } from "gl-matrix";
 
-enum CameraMovement {
+export enum CameraDirection {
   Forward,
   Backward,
   Left,
@@ -24,7 +24,7 @@ type CameraControlOptions = {
   zoom: number;
 };
 
-class Camera {
+export class Camera {
   position: vec3 = vec3.fromValues(0.0, 0.0, 0.0);
   front: vec3 = vec3.fromValues(0.0, 0.0, -1.0);
   up: vec3 = vec3.fromValues(0.0, 1.0, 0.0);
@@ -68,17 +68,19 @@ class Camera {
     );
   }
 
-  processKeyboardInput(direction: CameraMovement, deltaTime: number) {
+  move(direction: CameraDirection, deltaTime: number) {
     const velocity = this.controlOptions.movementSpeed * deltaTime;
     switch (direction) {
-      case CameraMovement.Forward:
+      case CameraDirection.Forward:
         vec3.add(this.position, this.position, vec3.scale(vec3.create(), this.front, velocity));
         break;
-      case CameraMovement.Backward:
+      case CameraDirection.Backward:
         vec3.sub(this.position, this.position, vec3.scale(vec3.create(), this.front, velocity));
-      case CameraMovement.Left:
+        break;
+      case CameraDirection.Left:
         vec3.sub(this.position, this.position, vec3.scale(vec3.create(), this.right, velocity));
-      case CameraMovement.Right:
+        break;
+      case CameraDirection.Right:
         vec3.add(this.position, this.position, vec3.scale(vec3.create(), this.right, velocity));
         break;
     }
