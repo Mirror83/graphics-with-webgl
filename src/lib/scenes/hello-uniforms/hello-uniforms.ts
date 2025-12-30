@@ -5,7 +5,11 @@ import type { RenderWrapper } from "~/lib/render";
 import { configureSceneObject } from "~/lib/scene-object";
 import { setUniform } from "~/lib/shaders";
 
-const helloUniforms: RenderWrapper = (canvas, shaderSources) => {
+// Shaders
+import vertexShaderSource from "~/lib/scenes/hello-uniforms/hello-uniforms.vert?raw";
+import fragmentShaderSource from "~/lib/scenes/hello-uniforms/hello-uniforms.frag?raw";
+
+const helloUniforms: RenderWrapper = (canvas) => {
   const result = setupWebGLContextWithCanvasResize(canvas);
   if (!result) {
     return () => {};
@@ -36,7 +40,10 @@ const helloUniforms: RenderWrapper = (canvas, shaderSources) => {
     attributeConfigs
   };
 
-  const sceneObject = configureSceneObject(gl, geometry, shaderSources);
+  const sceneObject = configureSceneObject(gl, geometry, {
+    vertex: vertexShaderSource,
+    fragment: fragmentShaderSource
+  });
   if (!sceneObject) {
     alert("Unable to configure geometry");
     return resizeHandlerCleanup;

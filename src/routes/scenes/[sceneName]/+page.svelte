@@ -22,13 +22,8 @@
 </svelte:head>
 
 <main class={`min-h-screen text-blue-50`} style:background-color={bgColour}>
-  <canvas
-    tabindex="0"
-    class="focus:outline-0"
-    {@attach (canvas) => {
-      const cleanup = data.renderWrapper(canvas, data.shaderSources);
-      return cleanup;
-    }}>{data.description}</canvas
+  <canvas tabindex="0" class="focus:outline-0" {@attach data.renderWrapper}
+    >{data.description}</canvas
   >
 
   <dialog

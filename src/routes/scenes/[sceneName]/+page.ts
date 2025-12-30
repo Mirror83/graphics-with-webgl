@@ -1,7 +1,6 @@
 import { error } from "@sveltejs/kit";
 import type { PageLoad } from "./$types";
 import { sceneDetails, type RenderWrapper } from "~/lib/render";
-import { getShaderSources } from "~/lib/shaders";
 
 /**
  * Dynamically imports the render wrapper function from the scene's module
@@ -26,11 +25,10 @@ export const load: PageLoad = async ({ params }) => {
     throw error(404, `Scene not found: ${sceneName}`);
   }
 
-  const shaderSources = await getShaderSources(sceneName);
   const renderWrapper = await getRenderWrapper(sceneName);
   if (!renderWrapper) {
     error(404, `Scene function not found for ${sceneName}`);
   }
 
-  return { shaderSources, renderWrapper, ...details };
+  return { renderWrapper, ...details };
 };

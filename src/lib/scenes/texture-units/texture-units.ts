@@ -10,7 +10,11 @@ import { configureSceneObject } from "~/lib/scene-object";
 import type { RenderWrapper } from "~/lib/render";
 import { loadTexture } from "~/lib/textures";
 
-const textureUnits: RenderWrapper = (canvas, shaderSources) => {
+// Shaders
+import vertexShaderSource from "~/lib/scenes/texture-units/texture-units.vert?raw";
+import fragmentShaderSource from "~/lib/scenes/texture-units/texture-units.frag?raw";
+
+const textureUnits: RenderWrapper = (canvas) => {
   const result = setupWebGLContextWithCanvasResize(canvas);
   if (!result) {
     return () => {};
@@ -67,7 +71,10 @@ const textureUnits: RenderWrapper = (canvas, shaderSources) => {
     ]
   };
 
-  const sceneObject = configureSceneObject(gl, geometry, shaderSources);
+  const sceneObject = configureSceneObject(gl, geometry, {
+    vertex: vertexShaderSource,
+    fragment: fragmentShaderSource
+  });
   if (!sceneObject) {
     alert("Unable to configure geometry");
     return resizeHandlerCleanup;

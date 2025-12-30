@@ -6,7 +6,11 @@ import type { RenderWrapper } from "~/lib/render";
 import { loadTexture } from "~/lib/textures";
 import { glMatrix, mat4, vec3 } from "gl-matrix";
 
-const moreCubes: RenderWrapper = (canvas, shaderSources) => {
+// Shaders
+import vertexShaderSource from "~/lib/scenes/more-cubes/more-cubes.vert?raw";
+import fragmentShaderSource from "~/lib/scenes/more-cubes/more-cubes.frag?raw";
+
+const moreCubes: RenderWrapper = (canvas) => {
   const result = setupWebGLContextWithCanvasResize(canvas);
   if (!result) {
     return () => {};
@@ -107,7 +111,10 @@ const moreCubes: RenderWrapper = (canvas, shaderSources) => {
     ]
   };
 
-  const sceneObject = configureSceneObject(gl, geometry, shaderSources);
+  const sceneObject = configureSceneObject(gl, geometry, {
+    vertex: vertexShaderSource,
+    fragment: fragmentShaderSource
+  });
   if (!sceneObject) {
     alert("Unable to configure geometry");
     return resizeHandlerCleanup;

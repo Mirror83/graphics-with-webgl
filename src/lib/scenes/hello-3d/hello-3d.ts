@@ -6,7 +6,11 @@ import { configureSceneObject } from "~/lib/scene-object";
 import { setUniform } from "~/lib/shaders";
 import { loadTexture } from "~/lib/textures";
 
-const hello3d: RenderWrapper = (canvas, shaderSources) => {
+// Shaders
+import vertexShaderSource from "~/lib/scenes/hello-3d/hello-3d.vert?raw";
+import fragmentShaderSource from "~/lib/scenes/hello-3d/hello-3d.frag?raw";
+
+const hello3d: RenderWrapper = (canvas) => {
   const result = setupWebGLContextWithCanvasResize(canvas);
   if (!result) {
     return () => {};
@@ -93,7 +97,10 @@ const hello3d: RenderWrapper = (canvas, shaderSources) => {
     ]
   };
 
-  const sceneObject = configureSceneObject(gl, geometry, shaderSources);
+  const sceneObject = configureSceneObject(gl, geometry, {
+    vertex: vertexShaderSource,
+    fragment: fragmentShaderSource
+  });
   if (!sceneObject) {
     alert("Unable to configure geometry");
     return resizeHandlerCleanup;

@@ -119,30 +119,3 @@ export function setUniform(
       console.warn(`Unsupported uniform type: ${details}`);
   }
 }
-
-export async function getVertexShaderSourceFromModule(sceneName: string): Promise<string> {
-  const module = await import(`~/lib/scenes/${sceneName}/${sceneName}.vert?raw`);
-  return module.default as string;
-}
-
-export async function getFragmentShaderSourceFromModule(sceneName: string): Promise<string> {
-  const module = await import(`~/lib/scenes/${sceneName}/${sceneName}.frag?raw`);
-  return module.default as string;
-}
-
-export async function getShaderSources(sceneName: string): Promise<ShaderSources> {
-  try {
-    const [fragmentSource, vertexSource] = await Promise.all([
-      getFragmentShaderSourceFromModule(sceneName),
-      getVertexShaderSourceFromModule(sceneName)
-    ]);
-
-    return {
-      fragment: fragmentSource,
-      vertex: vertexSource
-    };
-  } catch (error) {
-    console.error(`Error loading shader sources for scene "${sceneName}":`, error);
-    throw error;
-  }
-}

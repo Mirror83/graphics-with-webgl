@@ -8,7 +8,11 @@ import { glMatrix, mat4, vec3 } from "gl-matrix";
 import { on } from "svelte/events";
 import { Camera, CameraDirection } from "~/lib/camera";
 
-const moreCubes: RenderWrapper = (canvas, shaderSources) => {
+// Shaders
+import vertexShaderSource from "~/lib/scenes/movable-camera/movable-camera.vert?raw";
+import fragmentShaderSource from "~/lib/scenes/movable-camera/movable-camera.frag?raw";
+
+const moreCubes: RenderWrapper = (canvas) => {
   const result = setupWebGLContextWithCanvasResize(canvas);
   if (!result) {
     return () => {};
@@ -109,7 +113,10 @@ const moreCubes: RenderWrapper = (canvas, shaderSources) => {
     ]
   };
 
-  const sceneObject = configureSceneObject(gl, geometry, shaderSources);
+  const sceneObject = configureSceneObject(gl, geometry, {
+    vertex: vertexShaderSource,
+    fragment: fragmentShaderSource
+  });
   if (!sceneObject) {
     alert("Unable to configure geometry");
     return resizeHandlerCleanup;
