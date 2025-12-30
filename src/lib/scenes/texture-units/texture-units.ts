@@ -10,18 +10,6 @@ import { configureSceneObject } from "~/lib/scene-object";
 import type { RenderWrapper } from "~/lib/render";
 import { loadTexture } from "~/lib/textures";
 
-type ChangeMixAmountEvent =
-  | {
-      type: "change-mix-amount";
-      payload: "increase";
-    }
-  | {
-      type: "change-mix-amount";
-      payload: "decrease";
-    };
-
-type RenderEvent = ChangeMixAmountEvent;
-
 const textureUnits: RenderWrapper = (canvas, shaderSources) => {
   const result = setupWebGLContextWithCanvasResize(canvas);
   if (!result) {
@@ -94,44 +82,15 @@ const textureUnits: RenderWrapper = (canvas, shaderSources) => {
   };
 
   let mixAmount = 0.2;
-  const eventQueue: RenderEvent[] = [];
-
-  function changeMixAmount(event: ChangeMixAmountEvent) {
-    if (event.type !== "change-mix-amount") {
-      return;
-    }
-    switch (event.payload) {
-      case "increase":
-        mixAmount = Math.min(mixAmount + 0.1, 1.0);
-        break;
-      case "decrease":
-        mixAmount = Math.max(mixAmount - 0.1, 0.0);
-        break;
-    }
-  }
-
-  function processKeyboardEvents() {
-    if (!eventQueue.length) {
-      return;
-    }
-
-    while (eventQueue.length > 0) {
-      const event = eventQueue.shift();
-      if (event?.type === "change-mix-amount") {
-        changeMixAmount(event);
-      }
-    }
-  }
-
-  function updateEventQueue(event: KeyboardEvent) {
+  function changeTextureUnitMixAmount(event: KeyboardEvent) {
     if (event.key === "ArrowUp") {
-      eventQueue.push({ type: "change-mix-amount", payload: "increase" });
+      mixAmount = Math.min(mixAmount + 0.1, 1.0);
     } else if (event.key === "ArrowDown") {
-      eventQueue.push({ type: "change-mix-amount", payload: "decrease" });
+      mixAmount = Math.max(mixAmount - 0.1, 0.0);
     }
   }
 
-  const keydownHandlerCleanup = setupKeydownHandler(canvas, updateEventQueue);
+  const keydownHandlerCleanup = setupKeydownHandler(canvas, changeTextureUnitMixAmount);
 
   // The id of each requestAnimationFrame call, used to cancel the animation on cleanup
   let requestId: number;
@@ -141,8 +100,6 @@ const textureUnits: RenderWrapper = (canvas, shaderSources) => {
     }
 
     clearCanvasViewport(gl);
-    processKeyboardEvents();
-
     gl.bindVertexArray(sceneObject.vertexArrayObject);
     gl.useProgram(sceneObject.shaderProgram);
 
