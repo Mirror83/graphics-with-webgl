@@ -108,5 +108,9 @@ export const sceneDetails: SceneDetails[] = [
      forward and backward, and strafe left and right.
      Click and drag the mouse to look around. 
      Use the scroll wheel (or equivalent trackpad gesture) to zoom in and out. (Sorry mobile guys.)`
+  },
+  {
+    name: "Colours",
+    route: "colours"
   }
 ];
