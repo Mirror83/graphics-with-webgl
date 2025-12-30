@@ -12,7 +12,7 @@ import { Camera, CameraDirection } from "~/lib/camera";
 import vertexShaderSource from "~/lib/scenes/movable-camera/movable-camera.vert?raw";
 import fragmentShaderSource from "~/lib/scenes/movable-camera/movable-camera.frag?raw";
 
-const moreCubes: RenderWrapper = (canvas) => {
+const movableCamera: RenderWrapper = (canvas) => {
   const result = setupWebGLContextWithCanvasResize(canvas);
   if (!result) {
     return () => {};
@@ -309,4 +309,4 @@ const moreCubes: RenderWrapper = (canvas) => {
   };
 };
 
-export default moreCubes;
+export default movableCamera;
