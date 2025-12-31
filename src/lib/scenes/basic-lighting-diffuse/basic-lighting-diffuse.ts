@@ -191,11 +191,8 @@ const basicLighting: RenderWrapper = (canvas) => {
 
   // The id of each requestAnimationFrame call, used to cancel the animation on cleanup
   let requestId: number;
-  let camera = new Camera(vec3.fromValues(-3.0, 0.0, 3.0), vec3.fromValues(0.0, 1.0, 0.0), {
-    yaw: -31,
-    pitch: 5
-  });
-
+  let initialCameraPosition = vec3.fromValues(-0.95, 0.75, 1.23);
+  let camera = new Camera(initialCameraPosition, undefined, { yaw: -53.8, pitch: -8.6 });
   const renderTime: RenderTime = {
     previousTime: 0,
     deltaTime: 0
@@ -212,7 +209,7 @@ const basicLighting: RenderWrapper = (canvas) => {
     mouseState
   );
 
-  const lightPos = vec3.fromValues(1.2, 1.0, 2.0);
+  let lightPos = vec3.fromValues(1.2, 1.0, 2.0);
   const lightScale = vec3.fromValues(0.2, 0.2, 0.2);
   const lightColour = vec3.fromValues(1.0, 1.0, 1.0);
 
@@ -305,8 +302,14 @@ const basicLighting: RenderWrapper = (canvas) => {
     gl.useProgram(lightCube.shaderProgram);
 
     const lightCubeModel = mat4.create();
+    const radius = 1.0;
+    const x = Math.sin(currentTime * 0.0005) * radius;
+    const z = Math.cos(currentTime * 0.0005) * radius;
+    const y = radius;
+    lightPos = vec3.fromValues(x, y, z);
     mat4.translate(lightCubeModel, lightCubeModel, lightPos);
     mat4.scale(lightCubeModel, lightCubeModel, lightScale);
+
     setUniform(gl, lightCube.shaderProgram, {
       name: "model",
       type: "mat4-float",
