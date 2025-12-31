@@ -20,7 +20,12 @@
   }
 </script>
 
-<div class={["absolute top-8 left-8", sceneName && !isPageError && "text-blue-50"]}>
+<div
+  class={[
+    "absolute top-8 left-8 max-w-[20ch] truncate sm:max-w-[30ch] md:max-w-[50ch]",
+    sceneName && !isPageError && "text-blue-50"
+  ]}
+>
   {selectedPath?.name ?? currentPath}
 </div>
 {#if !sidebarOpen}
