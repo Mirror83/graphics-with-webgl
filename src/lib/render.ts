@@ -129,7 +129,8 @@ export const sceneDetails: SceneDetails[] = [
   },
   {
     name: "Colours",
-    route: "colours"
+    route: "colours",
+    description: "A scene with two unlit cubes showing their assigned colours (orange and white)."
   },
   {
     name: "Basic lighting (Diffuse)",
