@@ -1,11 +1,11 @@
 <script lang="ts">
   import { Menu, X } from "@lucide/svelte";
   import { page } from "$app/state";
-  import { sceneDetails } from "~/lib/render";
+  import { sceneDetailsList } from "~/lib/scene-details";
 
   const { sceneName } = $derived(page.params);
   const currentPath = $derived(page.url.pathname);
-  const selectedPath = $derived(sceneDetails.find((details) => details.route === sceneName));
+  const selectedPath = $derived(sceneDetailsList.find((details) => details.route === sceneName));
 
   let sidebarOpen = $state(false);
 
@@ -45,7 +45,7 @@
           >Graphics with WebGL</a
         >
         <ul class="mt-4 list-disc ps-4">
-          {#each sceneDetails as { route, name }}
+          {#each sceneDetailsList as { route, name }}
             <li>
               <a
                 href={`/scenes/${route}`}
