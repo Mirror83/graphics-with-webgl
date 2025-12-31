@@ -130,5 +130,10 @@ export const sceneDetails: SceneDetails[] = [
   {
     name: "Colours",
     route: "colours"
+  },
+  {
+    name: "Basic lighting (Diffuse)",
+    route: "basic-lighting-diffuse",
+    description: "A 3D cube lit by a single light source, demonstrating diffuse lighting."
   }
 ];
