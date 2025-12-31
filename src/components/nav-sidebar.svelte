@@ -7,6 +7,8 @@
   const currentPath = $derived(page.url.pathname);
   const selectedPath = $derived(sceneDetailsList.find((details) => details.route === sceneName));
 
+  const isPageError = $derived(page.error);
+
   let sidebarOpen = $state(false);
 
   function openSidebar() {
@@ -18,12 +20,12 @@
   }
 </script>
 
-<div class={["absolute top-8 left-8", sceneName && "text-blue-50"]}>
+<div class={["absolute top-8 left-8", sceneName && !isPageError && "text-blue-50"]}>
   {selectedPath?.name ?? currentPath}
 </div>
 {#if !sidebarOpen}
   <button
-    class={["absolute top-8 right-8", sceneName && "text-blue-50"]}
+    class={["absolute top-8 right-8", sceneName && !isPageError && "text-blue-50"]}
     aria-label={"Open sidebar"}
     onclick={openSidebar}
   >
