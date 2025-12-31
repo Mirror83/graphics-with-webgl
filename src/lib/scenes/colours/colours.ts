@@ -2,10 +2,9 @@ import { setUniform } from "~/lib/shaders";
 import type { Geometry, VertexAttributeConfig } from "~/lib/geometry";
 import { clearCanvasViewport, resizeCanvas, setupWebGLContextWithCanvasResize } from "~/lib/canvas";
 import { configureSceneObject } from "~/lib/scene-object";
-import type { RenderWrapper } from "~/lib/render";
+import { updateRenderTime, type RenderTime, type RenderWrapper } from "~/lib/render";
 import { glMatrix, mat4, vec3 } from "gl-matrix";
-import { on } from "svelte/events";
-import { Camera, CameraDirection } from "~/lib/camera";
+import { Camera, setupCameraInputEventHandlers, type CameraControlMouseState } from "~/lib/camera";
 
 // Shaders
 import containerVertexShaderSource from "~/lib/scenes/colours/container.vert?raw";
@@ -111,17 +110,6 @@ const colours: RenderWrapper = (canvas) => {
   };
   lightCube.draw = container.draw;
 
-  // The id of each requestAnimationFrame call, used to cancel the animation on cleanup
-  let requestId: number;
-  let camera = new Camera(vec3.fromValues(-3.0, 0.0, 3.0), vec3.fromValues(0.0, 1.0, 0.0), {
-    yaw: -31,
-    pitch: 5
-  });
-  let previousTime = 0;
-  let deltaTime = 0;
-  let lastMousePos = { x: canvas.width / 2, y: canvas.height / 2 };
-  let isMouseDown = false;
-
   const lightPos = vec3.fromValues(1.2, 1.0, 2.0);
   const lightScale = vec3.fromValues(0.2, 0.2, 0.2);
   const lightColour = vec3.fromValues(1.0, 1.0, 1.0);
@@ -129,90 +117,28 @@ const colours: RenderWrapper = (canvas) => {
   const containerPos = vec3.fromValues(0.0, 0.0, 0.0);
   const containerColour = vec3.fromValues(1.0, 0.5, 0.31);
 
-  function handleMouseDown(event: MouseEvent) {
-    lastMousePos = { x: event.clientX, y: event.clientY };
-    isMouseDown = true;
-  }
+  // The id of each requestAnimationFrame call, used to cancel the animation on cleanup
+  let requestId: number;
+  let camera = new Camera(vec3.fromValues(-3.0, 0.0, 3.0), vec3.fromValues(0.0, 1.0, 0.0), {
+    yaw: -31,
+    pitch: 5
+  });
 
-  function handleMouseUp() {
-    console.debug("position:", camera.position, "eulerAngles:", camera.eulerAngles);
-    isMouseDown = false;
-  }
+  const mouseState: CameraControlMouseState = {
+    lastMousePos: { x: canvas.width / 2, y: canvas.height / 2 },
+    isMouseDown: false
+  };
+  const renderTime: RenderTime = {
+    previousTime: 0,
+    deltaTime: 0
+  };
 
-  function handleMouseMove(event: MouseEvent) {
-    if (!isMouseDown) {
-      return;
-    }
-    const currentMousePos = { x: event.clientX, y: event.clientY };
-    const offset = {
-      x: currentMousePos.x - lastMousePos.x,
-      y: lastMousePos.y - currentMousePos.y // Reversed since y-coordinates go from bottom to top
-    };
-    lastMousePos = currentMousePos;
-    camera.lookAround(offset);
-  }
-
-  function handleScrollWheelZoom(event: WheelEvent) {
-    let deltaY: number;
-    switch (event.deltaMode) {
-      case WheelEvent.DOM_DELTA_PIXEL:
-        deltaY = event.deltaY;
-        break;
-      case WheelEvent.DOM_DELTA_LINE:
-        deltaY = event.deltaY * 16; // Approximate line height in pixels
-        break;
-      case WheelEvent.DOM_DELTA_PAGE:
-        deltaY = event.deltaY * 800; // Approximate page height in pixels
-        break;
-      default:
-        deltaY = event.deltaY;
-        break;
-    }
-    camera.zoom(deltaY * 0.01); // Scale down the scroll amount
-  }
-
-  function moveCameraByKeyboardInput(event: KeyboardEvent) {
-    switch (event.key) {
-      case "w":
-      case "ArrowUp":
-        camera.move(CameraDirection.Forward, deltaTime);
-        break;
-      case "s":
-      case "ArrowDown":
-        camera.move(CameraDirection.Backward, deltaTime);
-        break;
-      case "a":
-      case "ArrowLeft":
-        camera.move(CameraDirection.Left, deltaTime);
-        break;
-      case "d":
-      case "ArrowRight":
-        camera.move(CameraDirection.Right, deltaTime);
-        break;
-      default:
-        break;
-    }
-  }
-
-  const keydownCleanup = on(canvas, "keydown", moveCameraByKeyboardInput);
-  const mouseDownCleanup = on(canvas, "mousedown", handleMouseDown);
-  const mouseUpCleanup = on(canvas, "mouseup", handleMouseUp);
-  const mouseMoveCleanup = on(canvas, "mousemove", handleMouseMove);
-  const mouseScrollCleanup = on(
+  const cameraHandlersCleanup = setupCameraInputEventHandlers(
     canvas,
-    "wheel",
-    handleScrollWheelZoom,
-    // This option is to improve scrolling performance.
-    // For more info, see https://github.com/RByers/EventListenerOptions/blob/gh-pages/explainer.md
-    { passive: true }
+    renderTime,
+    camera,
+    mouseState
   );
-
-  function cleanupMouseHandlers() {
-    mouseDownCleanup();
-    mouseUpCleanup();
-    mouseMoveCleanup();
-    mouseScrollCleanup();
-  }
 
   function render(gl: WebGL2RenderingContext, canvas: HTMLCanvasElement, currentTime: number = 0) {
     if (!container) {
@@ -235,8 +161,7 @@ const colours: RenderWrapper = (canvas) => {
       return;
     }
 
-    deltaTime = (currentTime - previousTime) / 1000;
-    previousTime = currentTime;
+    updateRenderTime(renderTime, currentTime);
 
     const view = mat4.identity(mat4.create());
     mat4.lookAt(
@@ -327,8 +252,7 @@ const colours: RenderWrapper = (canvas) => {
   return () => {
     gl.disable(gl.DEPTH_TEST);
     gl.clear(gl.DEPTH_BUFFER_BIT);
-    keydownCleanup();
-    cleanupMouseHandlers();
+    cameraHandlersCleanup();
     resizeHandlerCleanup();
     cancelAnimationFrame(requestId);
   };

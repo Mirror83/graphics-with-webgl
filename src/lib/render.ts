@@ -29,6 +29,24 @@ type EventHandlerCleanup = () => void;
  *  */
 export type RenderWrapper = (canvas: HTMLCanvasElement) => EventHandlerCleanup;
 
+/** Represents timing information for rendering, including the previous frame time
+ *  and the delta time between frames.
+ *
+ *  This was created mainly as a way to pass delta time by reference to event handlers
+ * (see {@link setupCameraInputEventHandlers}, for example),
+ *  but it also encapsulates the logic for calculating delta time
+ *  between frames (see {@link updateRenderTime})
+ * */
+export type RenderTime = {
+  previousTime: number;
+  deltaTime: number;
+};
+
+export function updateRenderTime(renderTime: RenderTime, currentTimeInMs: number) {
+  renderTime.deltaTime = (currentTimeInMs - renderTime.previousTime) / 1000;
+  renderTime.previousTime = currentTimeInMs;
+}
+
 type SceneDetails = {
   name: string;
   route: string;

@@ -1,4 +1,6 @@
-import { glMatrix, mat4, vec2, vec3 } from "gl-matrix";
+import { glMatrix, mat4, vec3 } from "gl-matrix";
+import { on } from "svelte/events";
+import type { RenderTime } from "~/lib/render";
 
 export enum CameraDirection {
   Forward,
@@ -132,4 +134,144 @@ export class Camera {
 
     return { front, right, up };
   }
+}
+
+/** Stores information about the mouse relevant to controlling a {@link Camera} */
+export type CameraControlMouseState = {
+  lastMousePos: { x: number; y: number };
+  isMouseDown: boolean;
+};
+
+function handleMouseDown(event: MouseEvent, mouseState: CameraControlMouseState) {
+  mouseState.lastMousePos = { x: event.clientX, y: event.clientY };
+  mouseState.isMouseDown = true;
+}
+
+function handleMouseUp(camera: Camera, mouseState: CameraControlMouseState) {
+  console.debug("position:", camera.position, "eulerAngles:", camera.eulerAngles);
+  mouseState.isMouseDown = false;
+}
+
+function handleMouseMove(event: MouseEvent, camera: Camera, mouseState: CameraControlMouseState) {
+  if (!mouseState.isMouseDown) {
+    return;
+  }
+  const currentMousePos = { x: event.clientX, y: event.clientY };
+  const offset = {
+    x: currentMousePos.x - mouseState.lastMousePos.x,
+    y: mouseState.lastMousePos.y - currentMousePos.y // Reversed since y-coordinates go from bottom to top
+  };
+  mouseState.lastMousePos = currentMousePos;
+  camera.lookAround(offset);
+}
+
+function handleScrollWheelZoom(event: WheelEvent, camera: Camera) {
+  let deltaY: number;
+  switch (event.deltaMode) {
+    case WheelEvent.DOM_DELTA_PIXEL:
+      deltaY = event.deltaY;
+      break;
+    case WheelEvent.DOM_DELTA_LINE:
+      deltaY = event.deltaY * 16; // Approximate line height in pixels
+      break;
+    case WheelEvent.DOM_DELTA_PAGE:
+      deltaY = event.deltaY * 800; // Approximate page height in pixels
+      break;
+    default:
+      deltaY = event.deltaY;
+      break;
+  }
+  camera.zoom(deltaY * 0.01); // Scale down the scroll amount
+}
+
+function moveCameraByKeyboardInput(event: KeyboardEvent, renderTime: RenderTime, camera: Camera) {
+  const { deltaTime } = renderTime;
+  switch (event.key) {
+    case "w":
+    case "ArrowUp":
+      camera.move(CameraDirection.Forward, deltaTime);
+      break;
+    case "s":
+    case "ArrowDown":
+      camera.move(CameraDirection.Backward, deltaTime);
+      break;
+    case "a":
+    case "ArrowLeft":
+      camera.move(CameraDirection.Left, deltaTime);
+      break;
+    case "d":
+    case "ArrowRight":
+      camera.move(CameraDirection.Right, deltaTime);
+      break;
+    default:
+      break;
+  }
+}
+
+/**
+ * Sets up input event handlers for controlling a {@link Camera} using a mouse/trackpad and keyboard.
+ * The following controls are supported:
+ * - Mouse drag to look around
+ * - Scroll wheel to zoom in/out
+ * - W/A/S/D or Arrow keys to move forward/left/backward/right
+ *
+ * @param canvas The HTML canvas element to attach the event handlers to.
+ * @param renderTime The render time object that stores the current calculated delta time for framerate-independent movement.
+ * @param camera The camera to control.
+ * @param mouseState The mouse state object to track mouse position and button state.
+ * @returns A cleanup function to remove the event handlers when they are no longer needed.
+ */
+export function setupCameraInputEventHandlers(
+  canvas: HTMLCanvasElement,
+  renderTime: RenderTime,
+  camera: Camera,
+  mouseState: CameraControlMouseState
+) {
+  const keydownCleanup = setupKeydownHandlerForCamera(canvas, renderTime, camera);
+  const mouseEventsCleanup = setUpMouseEventHandlersForCamera(canvas, camera, mouseState);
+  return () => {
+    keydownCleanup();
+    mouseEventsCleanup();
+  };
+}
+
+function setupKeydownHandlerForCamera(
+  canvas: HTMLCanvasElement,
+  renderTime: RenderTime,
+  camera: Camera
+) {
+  const keydownCleanup = on(canvas, "keydown", (event) =>
+    moveCameraByKeyboardInput(event, renderTime, camera)
+  );
+
+  return keydownCleanup;
+}
+
+function setUpMouseEventHandlersForCamera(
+  canvas: HTMLCanvasElement,
+  camera: Camera,
+  mouseState: CameraControlMouseState
+) {
+  const mouseDownCleanup = on(canvas, "mousedown", (event) => handleMouseDown(event, mouseState));
+  const mouseUpCleanup = on(canvas, "mouseup", () => handleMouseUp(camera, mouseState));
+  const mouseMoveCleanup = on(canvas, "mousemove", (event) =>
+    handleMouseMove(event, camera, mouseState)
+  );
+  const mouseScrollCleanup = on(
+    canvas,
+    "wheel",
+    (event) => handleScrollWheelZoom(event, camera),
+    // This option is to improve scrolling performance.
+    // For more info, see https://github.com/RByers/EventListenerOptions/blob/gh-pages/explainer.md
+    { passive: true }
+  );
+
+  function cleanupMouseHandlers() {
+    mouseDownCleanup();
+    mouseUpCleanup();
+    mouseMoveCleanup();
+    mouseScrollCleanup();
+  }
+
+  return cleanupMouseHandlers;
 }
