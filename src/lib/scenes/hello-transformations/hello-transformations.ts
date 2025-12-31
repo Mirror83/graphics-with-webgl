@@ -105,7 +105,7 @@ const helloTransformations: RenderWrapper = (canvas) => {
     gl.bindVertexArray(sceneObject.vertexArrayObject);
     gl.useProgram(sceneObject.shaderProgram);
 
-    const rotatingContainerTransform = mat4.identity(mat4.create());
+    const rotatingContainerTransform = mat4.create();
     mat4.translate(
       rotatingContainerTransform,
       rotatingContainerTransform,
@@ -126,7 +126,7 @@ const helloTransformations: RenderWrapper = (canvas) => {
 
     sceneObject.draw();
 
-    const scalingContainerTransform = mat4.identity(mat4.create());
+    const scalingContainerTransform = mat4.create();
     mat4.translate(
       scalingContainerTransform,
       scalingContainerTransform,

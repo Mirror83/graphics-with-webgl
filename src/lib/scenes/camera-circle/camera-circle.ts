@@ -159,7 +159,7 @@ const moreCubes: RenderWrapper = (canvas) => {
     gl.bindVertexArray(sceneObject.vertexArrayObject);
     gl.useProgram(sceneObject.shaderProgram);
 
-    const view = mat4.identity(mat4.create());
+    const view = mat4.create();
     const radius = 10.0;
     const camX = Math.sin(timeInSeconds) * radius;
     const camZ = Math.cos(timeInSeconds) * radius;
@@ -184,7 +184,7 @@ const moreCubes: RenderWrapper = (canvas) => {
 
     for (let i = 0; i < cubePositions.length; i++) {
       const position = cubePositions[i];
-      const model = mat4.identity(mat4.create());
+      const model = mat4.create();
       mat4.translate(model, model, position);
       // The (i + 10) gives the first cube a non-zero angle
       // so that it is affected by the rotation calculation below

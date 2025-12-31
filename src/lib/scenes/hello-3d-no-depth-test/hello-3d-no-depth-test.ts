@@ -108,7 +108,7 @@ const hello3dNoDepthTest: RenderWrapper = (canvas) => {
 
   resizeCanvas(canvas, gl, window.innerWidth, window.innerHeight);
 
-  const view = mat4.identity(mat4.create());
+  const view = mat4.create();
   mat4.translate(view, view, vec3.fromValues(0.0, 0.0, -3.0));
   const projection = mat4.perspective(
     mat4.create(),
@@ -147,7 +147,7 @@ const hello3dNoDepthTest: RenderWrapper = (canvas) => {
     gl.bindVertexArray(sceneObject.vertexArrayObject);
     gl.useProgram(sceneObject.shaderProgram);
 
-    const model = mat4.identity(mat4.create());
+    const model = mat4.create();
     mat4.rotate(
       model,
       model,

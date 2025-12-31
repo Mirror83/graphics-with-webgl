@@ -163,7 +163,7 @@ const colours: RenderWrapper = (canvas) => {
 
     updateRenderTime(renderTime, currentTime);
 
-    const view = mat4.identity(mat4.create());
+    const view = mat4.create();
     mat4.lookAt(
       view,
       camera.position,
@@ -196,7 +196,7 @@ const colours: RenderWrapper = (canvas) => {
       type: "mat4-float",
       value: projection
     });
-    const containerModel = mat4.identity(mat4.create());
+    const containerModel = mat4.create();
     mat4.translate(containerModel, containerModel, containerPos);
     setUniform(gl, container.shaderProgram, {
       name: "model",
@@ -219,7 +219,7 @@ const colours: RenderWrapper = (canvas) => {
     gl.bindVertexArray(lightCube.vertexArrayObject);
     gl.useProgram(lightCube.shaderProgram);
 
-    const lightCubeModel = mat4.identity(mat4.create());
+    const lightCubeModel = mat4.create();
     mat4.translate(lightCubeModel, lightCubeModel, lightPos);
     mat4.scale(lightCubeModel, lightCubeModel, lightScale);
     setUniform(gl, lightCube.shaderProgram, {
