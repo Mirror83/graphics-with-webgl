@@ -135,5 +135,11 @@ export const sceneDetails: SceneDetails[] = [
     name: "Basic lighting (Diffuse)",
     route: "basic-lighting-diffuse",
     description: "A 3D cube lit by a single light source, demonstrating diffuse lighting."
+  },
+  {
+    name: "Basic lighting (Specular)",
+    route: "basic-lighting-specular",
+    description:
+      "A 3D cube lit by a single light source, demonstrating specular lighting (i.e. the Phong lighting model). The light source moves in a circle above the cube."
   }
 ];
