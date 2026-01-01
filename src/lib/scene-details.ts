@@ -93,5 +93,11 @@ export const sceneDetailsList: SceneDetails[] = [
     route: "basic-lighting-specular",
     description:
       "A 3D cube lit by a single light source, demonstrating specular lighting (i.e. the Phong lighting model). The light source moves in a circle above the cube."
+  },
+  {
+    name: "Materials",
+    route: "materials",
+    description:
+      "A 3D cube lit by a single light source with Material and Light structs used in the fragment shader. The light source moves in a circle above the cube and changes colours."
   }
 ];
