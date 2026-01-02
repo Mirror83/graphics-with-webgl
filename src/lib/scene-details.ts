@@ -99,5 +99,11 @@ export const sceneDetailsList: SceneDetails[] = [
     route: "materials",
     description:
       "A 3D cube lit by a single light source with Material and Light structs used in the fragment shader. The light source moves in a circle above the cube and changes colours."
+  },
+  {
+    name: "Lighting Maps - Diffuse",
+    route: "lighting-maps-diffuse",
+    description:
+      "A 3D container model lit by a single light source using a diffuse texture map for the container's material. The light source moves in a circle above the container."
   }
 ];
