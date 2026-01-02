@@ -48,7 +48,11 @@ export function configureSceneObject(
 
   gl.useProgram(shaderProgram);
   for (let i = 0; geometry.textures && i < geometry.textures.length; i++) {
-    setUniform(gl, shaderProgram, { name: `texture${i}`, type: "int", value: i });
+    setUniform(gl, shaderProgram, {
+      name: geometry.textureNames?.[i] ?? `texture${i}`,
+      type: "int",
+      value: i
+    });
   }
   // Unbind program to prevent capturing another object's config.
   gl.useProgram(null);

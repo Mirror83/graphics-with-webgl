@@ -12,4 +12,5 @@ export type Geometry = {
   attributeConfigs: VertexAttributeConfig[];
   indices?: Uint32Array;
   textures?: WebGLTexture[];
+  textureNames?: string[];
 };
