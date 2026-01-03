@@ -11,7 +11,7 @@ import containerVertexShaderSource from "~/lib/scenes/directional-light/containe
 import containerFragmentShaderSource from "~/lib/scenes/directional-light/container.frag?raw";
 import { loadTexture } from "~/lib/textures";
 
-const pointLights: RenderWrapper = (canvas) => {
+const directionalLight: RenderWrapper = (canvas) => {
   const result = setupWebGLContextWithCanvasResize(canvas);
   if (!result) {
     return () => {};
@@ -287,4 +287,4 @@ const pointLights: RenderWrapper = (canvas) => {
   };
 };
 
-export default pointLights;
+export default directionalLight;
