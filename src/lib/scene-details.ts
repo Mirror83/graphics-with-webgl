@@ -117,5 +117,10 @@ export const sceneDetailsList: SceneDetails[] = [
     route: "directional-light",
     description:
       "A 3D scene with multiple containers lit by a single directional light source, simulating sunlight. The camera is initially set up to look down from above (in the same direction as the light). Try moving around the scene and notice that the containers are lit in the same way."
+  },
+  {
+    name: "Point Light",
+    route: "point-light",
+    description: "A 3D scene with multiple containers lit by a point light."
   }
 ];
