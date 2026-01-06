@@ -1,5 +1,5 @@
 import { error } from "@sveltejs/kit";
-import type { PageLoad } from "./$types";
+import type { EntryGenerator, PageLoad } from "./$types";
 import { type RenderWrapper } from "~/lib/render";
 import { sceneDetailsList } from "~/lib/scene-details";
 
@@ -32,4 +32,10 @@ export const load: PageLoad = async ({ params }) => {
   }
 
   return { renderWrapper, ...details };
+};
+
+export const entries: EntryGenerator = async () => {
+  return sceneDetailsList.map((scene) => {
+    return { sceneName: scene.route };
+  });
 };
