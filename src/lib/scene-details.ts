@@ -122,5 +122,11 @@ export const sceneDetailsList: SceneDetails[] = [
     name: "Point Light",
     route: "point-light",
     description: "A 3D scene with multiple containers lit by a point light."
+  },
+  {
+    name: "Spotlight",
+    route: "spotlight",
+    description:
+      "A 3D scene with multiple containers lit by a spotlight that follows the camera's position and direction, simulating a flashlight (with soft edges)."
   }
 ];
