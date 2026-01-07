@@ -111,5 +111,22 @@ export const sceneDetailsList: SceneDetails[] = [
     route: "lighting-maps-specular",
     description:
       "A 3D container model lit by a single light source using both diffuse and specular texture maps for the container's material. The light source moves in a circle above the container. Notice that unlike the scene with the diffuse map, the specular highlights (read shine) is on the steel borders of the container only, and not on the wood."
+  },
+  {
+    name: "Directional Light",
+    route: "directional-light",
+    description:
+      "A 3D scene with multiple containers lit by a single directional light source, simulating sunlight. The camera is initially set up to look down from above (in the same direction as the light). Try moving around the scene and notice that the containers are lit in the same way."
+  },
+  {
+    name: "Point Light",
+    route: "point-light",
+    description: "A 3D scene with multiple containers lit by a point light."
+  },
+  {
+    name: "Spotlight",
+    route: "spotlight",
+    description:
+      "A 3D scene with multiple containers lit by a spotlight that follows the camera's position and direction, simulating a flashlight (with soft edges)."
   }
 ];
