@@ -5,7 +5,13 @@ type SceneDetails = {
   inputInstructions?: string;
 };
 
-export const sceneDetailsList: SceneDetails[] = [
+type PartName = string;
+export type Part = {
+  displayName: string;
+  scenes: SceneDetails[];
+};
+
+const gettingStartedSceneDetailsList = [
   {
     name: "Hello Triangle",
     route: "hello-triangle",
@@ -77,7 +83,10 @@ export const sceneDetailsList: SceneDetails[] = [
      forward and backward, and strafe left and right.
      Click and drag the mouse to look around. 
      Use the scroll wheel (or equivalent trackpad gesture) to zoom in and out. (Sorry mobile guys.)`
-  },
+  }
+];
+
+const lightingSceneDetailsList = [
   {
     name: "Colours",
     route: "colours",
@@ -136,3 +145,14 @@ export const sceneDetailsList: SceneDetails[] = [
       "A 3D scene with multiple containers lit by a directional light, four point lights, and a spotlight that follows the camera's position and direction."
   }
 ];
+
+export const parts: Record<PartName, Part> = {
+  "getting-started": {
+    displayName: "Getting Started",
+    scenes: gettingStartedSceneDetailsList
+  },
+  lighting: {
+    displayName: "Lighting",
+    scenes: lightingSceneDetailsList
+  }
+};
