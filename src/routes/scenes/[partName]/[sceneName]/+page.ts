@@ -44,10 +44,12 @@ export const load: PageLoad = async ({ params }) => {
 
 export const entries: EntryGenerator = async () => {
   const paths = Object.entries(parts).flatMap(([partName, part]) => {
-    return part.scenes.map((scene) => ({
-      partName,
-      sceneName: scene.route
-    }));
+    return part.scenes
+      .filter((scene) => !scene.hasCustomRouteFolder)
+      .map((scene) => ({
+        partName,
+        sceneName: scene.route
+      }));
   });
 
   return paths;
