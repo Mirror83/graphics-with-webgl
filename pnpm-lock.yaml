@@ -20,6 +20,9 @@ importers:
       '@tauri-apps/plugin-opener':
         specifier: ^2
         version: 2.5.2
+      assimpts:
+        specifier: ^0.1.0
+        version: 0.1.0
       gl-matrix:
         specifier: ^3.4.4
         version: 3.4.4
@@ -575,6 +578,9 @@ packages:
   aria-query@5.3.2:
     resolution: {integrity: sha512-COROpnaoap1E2F000S62r6A60uHZnmlvomhfyT2DlTcrY1OrBKn2UhH7qn5wTC9zMvD0AY7csdPSNwKP+7WiQw==}
     engines: {node: '>= 0.4'}
+
+  assimpts@0.1.0:
+    resolution: {integrity: sha512-xrYDrq+fDkNcxZb11VkXmJ6j4CI6OZi9yw62OgMwul1S9TXQaNmON0gh3jS699ZJqu0ExAeH0v4blkgUWdDxyA==}
 
   axobject-query@4.1.0:
     resolution: {integrity: sha512-qIj0G9wZbMGNLjLmg1PT6v2mE9AH2zlnADJD/2tC6E00hgmhUOfEB6greHPAfLRSufHqROIUTkw6E+M3lH0PTQ==}
@@ -1284,6 +1290,8 @@ snapshots:
   acorn@8.15.0: {}
 
   aria-query@5.3.2: {}
+
+  assimpts@0.1.0: {}
 
   axobject-query@4.1.0: {}
 

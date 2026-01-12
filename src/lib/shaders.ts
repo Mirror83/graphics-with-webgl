@@ -119,3 +119,23 @@ export function setUniform(
       console.warn(`Unsupported uniform type: ${details}`);
   }
 }
+
+export class Shader {
+  program: WebGLProgram;
+
+  constructor(gl: WebGL2RenderingContext, sources: ShaderSources) {
+    const program = createShaderProgram(gl, sources);
+    if (!program) {
+      throw new Error("Unable to initialize shader.");
+    }
+    this.program = program;
+  }
+
+  getAttributeLocation(gl: WebGL2RenderingContext, name: string): number {
+    return gl.getAttribLocation(this.program, name);
+  }
+
+  setUniform(gl: WebGL2RenderingContext, name: string, data: UniformValue) {
+    setUniform(gl, this.program, { name, ...data });
+  }
+}
