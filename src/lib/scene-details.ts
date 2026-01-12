@@ -3,6 +3,10 @@ type SceneDetails = {
   route: string;
   description?: string;
   inputInstructions?: string;
+  /** This is for a scene that has its own route folder (i.e. not meant
+   * to be rendered in the dynamic route template)
+   */
+  hasCustomRouteFolder?: boolean;
 };
 
 type PartName = string;
@@ -146,6 +150,15 @@ const lightingSceneDetailsList = [
   }
 ];
 
+const modelLoadingSceneDetailsList = [
+  {
+    name: "Backpack",
+    route: "backpack",
+    description: "A 3D backpack model loaded from an external file using AssimpTS.",
+    hasCustomRouteFolder: true
+  }
+];
+
 export const parts: Record<PartName, Part> = {
   "getting-started": {
     displayName: "Getting Started",
@@ -154,5 +167,9 @@ export const parts: Record<PartName, Part> = {
   lighting: {
     displayName: "Lighting",
     scenes: lightingSceneDetailsList
+  },
+  "model-loading": {
+    displayName: "Model Loading",
+    scenes: modelLoadingSceneDetailsList
   }
 };
