@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onDestroy, onMount } from "svelte";
   import { resizeCanvas } from "~/lib/canvas";
   import {
     BreakoutGame,
@@ -20,7 +20,7 @@
       return;
     }
     glBinding = gl;
-    const dimensions = { x: window.innerWidth, y: window.innerHeight };
+    const dimensions: BreakoutGameDimensions = { x: window.innerWidth, y: window.innerHeight };
     resizeCanvas(canvas, gl, dimensions.x, dimensions.y);
     const resourceManager = new ResourceManager(data.breakoutAssetsBaseURL);
     await game.init(gl, resourceManager, dimensions);
@@ -29,6 +29,10 @@
     console.debug("Game:", game);
     console.debug("Game state:", BreakoutGameState[game.state]);
     game.render(gl);
+  });
+
+  onDestroy(() => {
+    game.clearResources(glBinding);
   });
 </script>
 
