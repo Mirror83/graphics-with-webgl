@@ -28,18 +28,20 @@ export function loadTexture(gl: WebGLRenderingContext, url: string): WebGLTextur
     pixel
   );
 
-  const image = new Image();
-  image.onload = function () {
-    createImageBitmap(image, {
+  let image: HTMLImageElement | null = new Image();
+  image.onload = async () => {
+    if (!image) return;
+    const bitmap = await createImageBitmap(image, {
       // Flip image pixels into the bottom-to-top order that WebGL expects.
       imageOrientation: "flipY"
-    }).then((bitmap) => {
+    });
       gl.bindTexture(gl.TEXTURE_2D, texture);
       gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, srcFormat, srcType, bitmap);
       gl.generateMipmap(gl.TEXTURE_2D);
       // Unbind texture once done updating it.
       gl.bindTexture(gl.TEXTURE_2D, null);
-    });
+    image.src = "";
+    image = null;
   };
   image.src = url;
 
