@@ -16,21 +16,22 @@ export type BreakoutGameDimensions = {
 
 export class BreakoutGame {
   state: BreakoutGameState = $state(BreakoutGameState.NOT_INITIALIZED);
-  windowSize: BreakoutGameDimensions;
-  resourceManager: ResourceManager;
+  windowSize: BreakoutGameDimensions | null = null;
+  resourceManager: ResourceManager | null = null;
   #spriteRenderer: SpriteRenderer | null = null;
-
-  constructor(resourceManager: ResourceManager, windowSize: BreakoutGameDimensions) {
-    this.windowSize = windowSize;
-    this.resourceManager = resourceManager;
-  }
 
   setWindowSize(size: BreakoutGameDimensions) {
     this.windowSize = size;
   }
 
   /**Initialize game state (load all shaders/textures/levels) */
-  async init(gl: WebGL2RenderingContext) {
+  async init(
+    gl: WebGL2RenderingContext,
+    resourceManager: ResourceManager,
+    windowSize: BreakoutGameDimensions
+  ) {
+    this.windowSize = windowSize;
+    this.resourceManager = resourceManager;
     await this.resourceManager.loadShader(gl, "sprite", {
       vertex: "shaders/sprite.vert",
       fragment: "shaders/sprite.frag"
@@ -70,6 +71,7 @@ export class BreakoutGame {
   update(dt: number) {}
 
   render(gl: WebGL2RenderingContext) {
+    if (!this.resourceManager) return;
     if (!this.#spriteRenderer) return;
     const ballTexture = this.resourceManager.getTexture("ball");
     if (!ballTexture) return;

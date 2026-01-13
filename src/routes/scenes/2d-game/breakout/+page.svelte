@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from "svelte";
   import { resizeCanvas } from "~/lib/canvas";
   import {
     BreakoutGame,
@@ -7,22 +8,12 @@
   } from "~/lib/game/game.svelte";
   import { ResourceManager } from "~/lib/game/resource-manager";
 
+  let { data } = $props();
   let glBinding: WebGL2RenderingContext;
   let canvas: HTMLCanvasElement;
-  let game: BreakoutGame | null = null;
+  const game = new BreakoutGame();
 
-  async function setupGame(gl: WebGL2RenderingContext, dimensions: BreakoutGameDimensions) {
-    const resourceManager = new ResourceManager();
-    game = new BreakoutGame(resourceManager, dimensions);
-    await game.init(gl);
-
-    console.debug("Game init complete.");
-    console.debug("Game:", game);
-    console.debug("Game state:", BreakoutGameState[game.state]);
-    game.render(gl);
-  }
-
-  function main(canvas: HTMLCanvasElement) {
+  onMount(async () => {
     console.debug("In main");
     const gl = canvas.getContext("webgl2");
     if (!gl) {
@@ -31,12 +22,14 @@
     glBinding = gl;
     const dimensions = { x: window.innerWidth, y: window.innerHeight };
     resizeCanvas(canvas, gl, dimensions.x, dimensions.y);
-    setupGame(gl, dimensions);
+    const resourceManager = new ResourceManager(data.breakoutAssetsBaseURL);
+    await game.init(gl, resourceManager, dimensions);
 
-    return () => {
-      game?.clearResources(gl);
-    };
-  }
+    console.debug("Game init complete.");
+    console.debug("Game:", game);
+    console.debug("Game state:", BreakoutGameState[game.state]);
+    game.render(gl);
+  });
 </script>
 
 <main class="flex min-h-screen items-center justify-center bg-black">
@@ -48,5 +41,5 @@
     </div>
   </div>
 
-  <canvas bind:this={canvas} {@attach main}></canvas>
+  <canvas bind:this={canvas}></canvas>
 </main>

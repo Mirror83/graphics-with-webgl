@@ -4,12 +4,7 @@ import { Texture2D } from "~/lib/textures";
 type TextureName = "ball";
 type ShaderName = "sprite";
 
-const BASE_URL = "http://localhost:1420/assets/breakout";
-
 type Fetch = typeof fetch;
-const relativeFetch: Fetch = (relativePath, init) => {
-  return fetch(`${BASE_URL}/${relativePath}`, init);
-};
 
 type ShaderSourcesRelativePaths = {
   vertex: string;
@@ -20,9 +15,13 @@ export class ResourceManager {
   #shaders = new Map<ShaderName, Shader>();
   #textures = new Map<TextureName, Texture2D>();
   #fetch: Fetch;
+  #breakoutAssetsBaseURL: string;
 
-  constructor(resourceFetcher: Fetch = relativeFetch) {
-    this.#fetch = resourceFetcher;
+  constructor(breakoutAssetsBaseURL: string) {
+    this.#breakoutAssetsBaseURL = breakoutAssetsBaseURL;
+    this.#fetch = (path, init) => {
+      return fetch(`${this.#breakoutAssetsBaseURL}/${path}`, init);
+    };
   }
 
   getShader(name: ShaderName): Shader | null {
@@ -78,7 +77,7 @@ export class ResourceManager {
   }
 
   async loadTexture(gl: WebGL2RenderingContext, name: TextureName, path: string) {
-    const url = `${BASE_URL}/${path}`;
+    const url = `${this.#breakoutAssetsBaseURL}/${path}`;
     const textureData = await this.#loadTexImageSource(url);
 
     const texture = new Texture2D();
