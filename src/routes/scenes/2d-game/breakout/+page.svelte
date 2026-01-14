@@ -14,7 +14,6 @@
   const game = new BreakoutGame();
 
   onMount(async () => {
-    console.debug("In main");
     const gl = canvas.getContext("webgl2");
     if (!gl) {
       return;
