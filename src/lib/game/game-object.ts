@@ -40,3 +40,22 @@ class BreakoutGameObject {
 }
 
 export class Block extends BreakoutGameObject {}
+
+const INITIAL_PADDLE_SIZE = vec2.fromValues(100, 20);
+const INITIAL_PADDLE_VELOCITY = vec2.fromValues(500, 0);
+
+type PaddleProperties = Omit<BreakoutGameObjectProperties, "size" | "velocity"> & {
+  size?: vec2;
+  velocity?: vec2;
+};
+
+export class Paddle extends BreakoutGameObject {
+  constructor(properties: PaddleProperties) {
+    super({
+      ...properties,
+      size: properties.size ?? INITIAL_PADDLE_SIZE,
+      velocity: properties.velocity ?? INITIAL_PADDLE_VELOCITY,
+      isSolid: true
+    });
+  }
+}

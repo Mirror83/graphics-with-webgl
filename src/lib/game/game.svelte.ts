@@ -1,4 +1,5 @@
 import { mat4, vec2, vec4 } from "gl-matrix";
+import { Paddle } from "~/lib/game/game-object";
 import { BreakoutGameLevel } from "~/lib/game/level";
 import { ResourceManager } from "~/lib/game/resource-manager";
 import { SpriteRenderer } from "~/lib/game/sprite";
@@ -24,6 +25,7 @@ export class BreakoutGame {
   #spriteRenderer: SpriteRenderer | null = null;
   #levels: BreakoutGameLevel[] = [];
   #currentLevelIndex: number = 0;
+  #paddle: Paddle | null = null;
 
   setWindowSize(size: BreakoutGameDimensions) {
     this.windowSize = size;
@@ -46,7 +48,8 @@ export class BreakoutGame {
       this.resourceManager.loadTexture(gl, "ball", "textures/ball.png"),
       this.resourceManager.loadTexture(gl, "block_solid", "textures/block_solid.png"),
       this.resourceManager.loadTexture(gl, "block", "textures/block.png"),
-      this.resourceManager.loadTexture(gl, "background", "textures/background.jpg")
+      this.resourceManager.loadTexture(gl, "background", "textures/background.jpg"),
+      this.resourceManager.loadTexture(gl, "paddle", "textures/paddle.png")
     ]);
     // These define the size of the near and far planes of the orthographic projection
     // (their top-left and bottom-right corners)
@@ -77,6 +80,16 @@ export class BreakoutGame {
     this.#levels = levels;
     this.#currentLevelIndex = 0;
 
+    const paddleSprite = this.resourceManager.getTexture("paddle");
+    if (!paddleSprite) {
+      throw new Error("Paddle texture not found in resource manager");
+    }
+
+    this.#paddle = new Paddle({
+      position: vec2.fromValues(windowSize.x / 2 - 50, windowSize.y - 30),
+      sprite: paddleSprite
+    });
+
     const spriteShader = this.resourceManager.getShader("sprite");
     if (!spriteShader) {
       throw new Error("Sprite shader not found in resource manager");
@@ -101,6 +114,7 @@ export class BreakoutGame {
     if (!this.#spriteRenderer) return;
     const backgroundTexture = this.resourceManager.getTexture("background");
     if (!backgroundTexture) return;
+    if (!this.#paddle) return;
 
     this.#spriteRenderer.drawSprite(
       gl,
@@ -112,6 +126,7 @@ export class BreakoutGame {
     );
     const currentLevel = this.#levels[this.#currentLevelIndex];
     currentLevel.draw(gl, this.#spriteRenderer);
+    this.#paddle.draw(gl, this.#spriteRenderer);
   }
 
   clearResources(gl: WebGL2RenderingContext) {
