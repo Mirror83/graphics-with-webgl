@@ -1,7 +1,7 @@
 import { Shader, type ShaderSources } from "~/lib/shaders";
 import { Texture2D } from "~/lib/textures";
 
-type TextureName = "ball";
+type TextureName = "ball" | "block_solid" | "block" | "background";
 type ShaderName = "sprite";
 
 type Fetch = typeof fetch;
@@ -88,6 +88,11 @@ export class ResourceManager {
 
     texture.init(gl, textureData, mipmapLevel, internalFormat, srcFormat, srcType);
     this.#textures.set(name, texture);
+  }
+
+  async loadLevelText(path: string): Promise<string> {
+    const response = await this.#fetch(path);
+    return await response.text();
   }
 
   clearResources(gl: WebGL2RenderingContext) {
