@@ -8,6 +8,7 @@ import { updateRenderTime, type RenderTime } from "~/lib/render";
 
 export enum BreakoutGameState {
   ACTIVE,
+  PAUSED,
   MENU,
   WIN,
   NOT_INITIALIZED
@@ -160,6 +161,18 @@ export class BreakoutGame {
     });
   }
 
+  pause() {
+    if (this.#requestAnimationFrameId !== null) {
+      cancelAnimationFrame(this.#requestAnimationFrameId);
+      this.#requestAnimationFrameId = null;
+      this.state = BreakoutGameState.PAUSED;
+    }
+  }
+  resume(gl: WebGL2RenderingContext) {
+    if (this.state === BreakoutGameState.PAUSED) {
+      this.state = BreakoutGameState.ACTIVE;
+      this.render(gl);
+    }
   }
 
   clearResources(gl: WebGL2RenderingContext) {
