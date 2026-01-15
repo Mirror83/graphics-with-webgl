@@ -1,8 +1,10 @@
 import { mat4, vec2, vec4 } from "gl-matrix";
+import { on } from "svelte/events";
 import { Paddle } from "~/lib/game/game-object";
 import { BreakoutGameLevel } from "~/lib/game/level";
 import { ResourceManager } from "~/lib/game/resource-manager";
 import { SpriteRenderer } from "~/lib/game/sprite";
+import { updateRenderTime, type RenderTime } from "~/lib/render";
 
 export enum BreakoutGameState {
   ACTIVE,
@@ -26,6 +28,9 @@ export class BreakoutGame {
   #levels: BreakoutGameLevel[] = [];
   #currentLevelIndex: number = 0;
   #paddle: Paddle | null = null;
+  #renderTime: RenderTime = { deltaTime: 0, previousTime: 0 };
+  #inputHandlerDisposers: Array<() => void> = [];
+  #requestAnimationFrameId: number | null = null;
 
   setWindowSize(size: BreakoutGameDimensions) {
     this.windowSize = size;
@@ -102,8 +107,28 @@ export class BreakoutGame {
     const renderer = new SpriteRenderer(spriteShader);
     renderer.init(gl);
     this.#spriteRenderer = renderer;
+    this.#inputHandlerDisposers.push(this.#configurePaddleMovementInputHandler());
 
     this.state = BreakoutGameState.ACTIVE;
+  }
+
+  #configurePaddleMovementInputHandler() {
+    return on(window, "keydown", (event: KeyboardEvent) => {
+      if (!this.#paddle) return;
+      if (!this.windowSize) return;
+      if (this.state !== BreakoutGameState.ACTIVE) return;
+
+      const velocity = this.#paddle.velocity[0] * this.#renderTime.deltaTime;
+      if (event.key === "ArrowLeft") {
+        if (this.#paddle.position[0] >= 0.0) {
+          this.#paddle.position[0] -= velocity;
+        }
+      } else if (event.key === "ArrowRight") {
+        if (this.#paddle.position[0] + this.#paddle.size[0] <= this.windowSize.x) {
+          this.#paddle.position[0] += velocity;
+        }
+      }
+    });
   }
 
   update(dt: number) {}
@@ -115,6 +140,7 @@ export class BreakoutGame {
     const backgroundTexture = this.resourceManager.getTexture("background");
     if (!backgroundTexture) return;
     if (!this.#paddle) return;
+    if (this.state !== BreakoutGameState.ACTIVE) return;
 
     this.#spriteRenderer.drawSprite(
       gl,
@@ -127,9 +153,22 @@ export class BreakoutGame {
     const currentLevel = this.#levels[this.#currentLevelIndex];
     currentLevel.draw(gl, this.#spriteRenderer);
     this.#paddle.draw(gl, this.#spriteRenderer);
+
+    this.#requestAnimationFrameId = requestAnimationFrame((time) => {
+      updateRenderTime(this.#renderTime, time);
+      this.render(gl);
+    });
+  }
+
   }
 
   clearResources(gl: WebGL2RenderingContext) {
     this.resourceManager?.clearResources(gl);
+    this.#inputHandlerDisposers.forEach((dispose) => dispose());
+    this.#inputHandlerDisposers = [];
+    if (this.#requestAnimationFrameId !== null) {
+      cancelAnimationFrame(this.#requestAnimationFrameId);
+      this.#requestAnimationFrameId = null;
+    }
   }
 }
