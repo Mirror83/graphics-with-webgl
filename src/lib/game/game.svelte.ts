@@ -97,10 +97,9 @@ export class BreakoutGame {
       sprite: paddleSprite
     });
 
-    const ballPosition = vec2.add(
-      vec2.create(),
+    const ballPosition = this.#ballPositionOnPaddleWhenStuck(
       this.#paddle.position,
-      vec2.fromValues(this.#paddle.size[0] / 2 - BALL_RADIUS, -BALL_RADIUS * 2.0)
+      this.#paddle.size[0]
     );
     const ballSprite = this.resourceManager.getTexture("ball");
     if (!ballSprite) {
@@ -123,6 +122,14 @@ export class BreakoutGame {
     this.#inputHandlerDisposers.push(this.#configurePaddleMovementInputHandler());
 
     this.state = BreakoutGameState.ACTIVE;
+  }
+
+  #ballPositionOnPaddleWhenStuck(paddlePosition: vec2, paddleWidth: number): vec2 {
+    return vec2.add(
+      vec2.create(),
+      paddlePosition,
+      vec2.fromValues(paddleWidth / 2 - BALL_RADIUS, -BALL_RADIUS * 2.0)
+    );
   }
 
   #configurePaddleMovementInputHandler() {
@@ -150,7 +157,17 @@ export class BreakoutGame {
   update(dt: number) {
     if (this.state !== BreakoutGameState.ACTIVE) return;
     if (!this.#ball) return;
-    this.#ball.move(dt, this.windowSize ? this.windowSize.x : 0);
+    if (!this.#paddle) return;
+
+    if (this.#ball.stuck) {
+      const ballPosition = this.#ballPositionOnPaddleWhenStuck(
+        this.#paddle.position,
+        this.#paddle.size[0]
+      );
+      this.#ball.move(dt, this.windowSize ? this.windowSize.x : 0, ballPosition);
+    } else {
+      this.#ball.move(dt, this.windowSize ? this.windowSize.x : 0);
+    }
   }
 
   render(gl: WebGL2RenderingContext) {
@@ -172,12 +189,10 @@ export class BreakoutGame {
       0
     );
 
-    const currentLevel = this.#levels[this.#currentLevelIndex];
-    currentLevel.draw(gl, this.#spriteRenderer);
+    this.update(this.#renderTime.deltaTime);
 
+    this.#levels[this.#currentLevelIndex].draw(gl, this.#spriteRenderer);
     this.#paddle.draw(gl, this.#spriteRenderer);
-
-    this.#ball.move(this.#renderTime.deltaTime, this.windowSize.x);
     this.#ball.draw(gl, this.#spriteRenderer);
 
     this.#requestAnimationFrameId = requestAnimationFrame((time) => {

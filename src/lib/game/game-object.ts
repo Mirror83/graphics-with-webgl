@@ -81,8 +81,11 @@ export class Ball extends BreakoutGameObject {
     this.radius = properties.radius ?? BALL_RADIUS;
   }
 
-  move(deltaTime: number, windowWidth: number) {
-    if (this.stuck) return this.position;
+  move(deltaTime: number, windowWidth: number, newPositionWhenStuck?: vec2): vec2 {
+    if (this.stuck) {
+      this.position = newPositionWhenStuck ? newPositionWhenStuck : this.position;
+      return this.position;
+    }
     this.position = vec2.scaleAndAdd(this.position, this.position, this.velocity, deltaTime);
     if (this.position[0] <= 0) {
       this.velocity[0] = -this.velocity[0];
