@@ -121,6 +121,9 @@ export class BreakoutGame {
     this.#spriteRenderer = renderer;
     this.#inputHandlerDisposers.push(this.#configurePaddleMovementInputHandler());
 
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
     this.state = BreakoutGameState.ACTIVE;
   }
 
@@ -216,6 +219,7 @@ export class BreakoutGame {
   }
 
   clearResources(gl: WebGL2RenderingContext) {
+    gl.disable(gl.BLEND);
     this.resourceManager?.clearResources(gl);
     this.#inputHandlerDisposers.forEach((dispose) => dispose());
     this.#inputHandlerDisposers = [];
