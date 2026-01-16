@@ -1,6 +1,6 @@
 import { mat4, vec2, vec4 } from "gl-matrix";
 import { on } from "svelte/events";
-import { Paddle } from "~/lib/game/game-object";
+import { Ball, BALL_RADIUS, Paddle } from "~/lib/game/game-object";
 import { BreakoutGameLevel } from "~/lib/game/level";
 import { ResourceManager } from "~/lib/game/resource-manager";
 import { SpriteRenderer } from "~/lib/game/sprite";
@@ -29,6 +29,7 @@ export class BreakoutGame {
   #levels: BreakoutGameLevel[] = [];
   #currentLevelIndex: number = 0;
   #paddle: Paddle | null = null;
+  #ball: Ball | null = null;
   #renderTime: RenderTime = { deltaTime: 0, previousTime: 0 };
   #inputHandlerDisposers: Array<() => void> = [];
   #requestAnimationFrameId: number | null = null;
@@ -96,6 +97,17 @@ export class BreakoutGame {
       sprite: paddleSprite
     });
 
+    const ballPosition = vec2.add(
+      vec2.create(),
+      this.#paddle.position,
+      vec2.fromValues(this.#paddle.size[0] / 2 - BALL_RADIUS, -BALL_RADIUS * 2.0)
+    );
+    const ballSprite = this.resourceManager.getTexture("ball");
+    if (!ballSprite) {
+      throw new Error("Ball texture not found in resource manager");
+    }
+    this.#ball = new Ball({ position: ballPosition, sprite: ballSprite });
+
     const spriteShader = this.resourceManager.getShader("sprite");
     if (!spriteShader) {
       throw new Error("Sprite shader not found in resource manager");
@@ -128,11 +140,18 @@ export class BreakoutGame {
         if (this.#paddle.position[0] + this.#paddle.size[0] <= this.windowSize.x) {
           this.#paddle.position[0] += velocity;
         }
+      } else if (event.key === " ") {
+        if (!this.#ball) return;
+        this.#ball.stuck = false;
       }
     });
   }
 
-  update(dt: number) {}
+  update(dt: number) {
+    if (this.state !== BreakoutGameState.ACTIVE) return;
+    if (!this.#ball) return;
+    this.#ball.move(dt, this.windowSize ? this.windowSize.x : 0);
+  }
 
   render(gl: WebGL2RenderingContext) {
     if (!this.windowSize) return;
@@ -141,6 +160,7 @@ export class BreakoutGame {
     const backgroundTexture = this.resourceManager.getTexture("background");
     if (!backgroundTexture) return;
     if (!this.#paddle) return;
+    if (!this.#ball) return;
     if (this.state !== BreakoutGameState.ACTIVE) return;
 
     this.#spriteRenderer.drawSprite(
@@ -151,9 +171,14 @@ export class BreakoutGame {
       vec4.fromValues(1, 1, 1, 1),
       0
     );
+
     const currentLevel = this.#levels[this.#currentLevelIndex];
     currentLevel.draw(gl, this.#spriteRenderer);
+
     this.#paddle.draw(gl, this.#spriteRenderer);
+
+    this.#ball.move(this.#renderTime.deltaTime, this.windowSize.x);
+    this.#ball.draw(gl, this.#spriteRenderer);
 
     this.#requestAnimationFrameId = requestAnimationFrame((time) => {
       updateRenderTime(this.#renderTime, time);

@@ -41,7 +41,7 @@ class BreakoutGameObject {
 
 export class Block extends BreakoutGameObject {}
 
-const INITIAL_PADDLE_SIZE = vec2.fromValues(100, 20);
+export const INITIAL_PADDLE_SIZE = vec2.fromValues(100, 20);
 const INITIAL_PADDLE_VELOCITY = vec2.fromValues(500, 0);
 
 type PaddleProperties = Omit<BreakoutGameObjectProperties, "size" | "velocity"> & {
@@ -50,6 +50,7 @@ type PaddleProperties = Omit<BreakoutGameObjectProperties, "size" | "velocity"> 
 };
 
 export class Paddle extends BreakoutGameObject {
+  static readonly INITIAL_SIZE = INITIAL_PADDLE_SIZE;
   constructor(properties: PaddleProperties) {
     super({
       ...properties,
@@ -57,5 +58,48 @@ export class Paddle extends BreakoutGameObject {
       velocity: properties.velocity ?? INITIAL_PADDLE_VELOCITY,
       isSolid: true
     });
+  }
+}
+
+const INITIAL_BALL_VELOCITY = vec2.fromValues(100, -350);
+export const BALL_RADIUS = 12.5;
+
+type BallProperties = Omit<BreakoutGameObjectProperties, "size"> & {
+  radius?: number;
+};
+
+export class Ball extends BreakoutGameObject {
+  radius: number;
+  stuck: boolean = true;
+
+  constructor(properties: BallProperties) {
+    super({
+      ...properties,
+      velocity: properties.velocity ?? INITIAL_BALL_VELOCITY,
+      size: vec2.fromValues(BALL_RADIUS * 2, BALL_RADIUS * 2)
+    });
+    this.radius = properties.radius ?? BALL_RADIUS;
+  }
+
+  move(deltaTime: number, windowWidth: number) {
+    if (this.stuck) return this.position;
+    this.position = vec2.scaleAndAdd(this.position, this.position, this.velocity, deltaTime);
+    if (this.position[0] <= 0) {
+      this.velocity[0] = -this.velocity[0];
+      this.position[0] = 0;
+    } else if (this.position[0] + this.size[0] >= windowWidth) {
+      this.velocity[0] = -this.velocity[0];
+      this.position[0] = windowWidth - this.size[0];
+    }
+    if (this.position[1] <= 0) {
+      this.velocity[1] = -this.velocity[1];
+      this.position[1] = 0;
+    }
+    return this.position;
+  }
+
+  reset(position: vec2, velocity: vec2) {
+    this.position = position;
+    this.velocity = velocity;
   }
 }
