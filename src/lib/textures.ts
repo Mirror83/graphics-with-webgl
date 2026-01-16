@@ -28,20 +28,52 @@ export function loadTexture(gl: WebGLRenderingContext, url: string): WebGLTextur
     pixel
   );
 
-  const image = new Image();
-  image.onload = function () {
-    createImageBitmap(image, {
+  let image: HTMLImageElement | null = new Image();
+  image.onload = async () => {
+    if (!image) return;
+    const bitmap = await createImageBitmap(image, {
       // Flip image pixels into the bottom-to-top order that WebGL expects.
       imageOrientation: "flipY"
-    }).then((bitmap) => {
-      gl.bindTexture(gl.TEXTURE_2D, texture);
-      gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, srcFormat, srcType, bitmap);
-      gl.generateMipmap(gl.TEXTURE_2D);
-      // Unbind texture once done updating it.
-      gl.bindTexture(gl.TEXTURE_2D, null);
     });
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, srcFormat, srcType, bitmap);
+    gl.generateMipmap(gl.TEXTURE_2D);
+    // Unbind texture once done updating it.
+    gl.bindTexture(gl.TEXTURE_2D, null);
+    image.src = "";
+    image = null;
   };
   image.src = url;
 
   return texture;
+}
+
+export class Texture2D {
+  id: WebGLTexture | null = null;
+
+  async init(
+    gl: WebGL2RenderingContext,
+    data: TexImageSource,
+    mipmapLevel: number,
+    internalFormat: number,
+    srcFormat: number,
+    srcType: number
+  ) {
+    this.id = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, this.id);
+    gl.texImage2D(gl.TEXTURE_2D, mipmapLevel, internalFormat, srcFormat, srcType, data);
+    gl.generateMipmap(gl.TEXTURE_2D);
+    // Unbind texture once done updating it.
+    gl.bindTexture(gl.TEXTURE_2D, null);
+  }
+
+  bind(gl: WebGL2RenderingContext) {
+    if (!this.id) throw new Error("The texture is not yet initialized.");
+    gl.bindTexture(gl.TEXTURE_2D, this.id);
+  }
+
+  unbind(gl: WebGL2RenderingContext) {
+    if (!this.id) throw new Error("This texture is not yet initialized.");
+    gl.bindTexture(gl.TEXTURE_2D, null);
+  }
 }

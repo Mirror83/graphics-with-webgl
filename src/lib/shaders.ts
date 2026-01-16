@@ -131,11 +131,21 @@ export class Shader {
     this.program = program;
   }
 
+  use(gl: WebGL2RenderingContext) {
+    gl.useProgram(this.program);
+    return this;
+  }
+
+  finishUse(gl: WebGL2RenderingContext) {
+    gl.useProgram(null);
+  }
+
   getAttributeLocation(gl: WebGL2RenderingContext, name: string): number {
     return gl.getAttribLocation(this.program, name);
   }
 
   setUniform(gl: WebGL2RenderingContext, name: string, data: UniformValue) {
     setUniform(gl, this.program, { name, ...data });
+    return this;
   }
 }

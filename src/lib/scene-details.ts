@@ -171,5 +171,17 @@ export const parts: Record<PartName, Part> = {
   "model-loading": {
     displayName: "Model Loading",
     scenes: modelLoadingSceneDetailsList
+  },
+  "2d-game": {
+    displayName: "2D Game",
+    scenes: [
+      {
+        name: "Breakout",
+        route: "breakout?hide-navbar=true",
+        description:
+          "A simple 2D Breakout game implemented using WebGL for rendering and TypeScript for game logic.",
+        hasCustomRouteFolder: true
+      }
+    ]
   }
 };
