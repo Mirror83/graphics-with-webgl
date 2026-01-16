@@ -1,6 +1,5 @@
 <script lang="ts">
   import { Pause } from "@lucide/svelte";
-  import { onDestroy, onMount } from "svelte";
   import { resizeCanvas } from "~/lib/canvas";
   import {
     BreakoutGame,
@@ -10,20 +9,13 @@
   import { ResourceManager } from "~/lib/game/resource-manager";
 
   let { data } = $props();
-  let glBinding: WebGL2RenderingContext;
+  let glExternal: WebGL2RenderingContext;
   let canvas: HTMLCanvasElement;
   const game = new BreakoutGame();
 
   let pauseMenu: HTMLDialogElement;
 
-  onMount(async () => {
-    const gl = canvas.getContext("webgl2");
-    if (!gl) {
-      return;
-    }
-    glBinding = gl;
-    const dimensions: BreakoutGameDimensions = { x: window.innerWidth, y: window.innerHeight };
-    resizeCanvas(canvas, gl, dimensions.x, dimensions.y);
+  async function setupGame(gl: WebGL2RenderingContext, dimensions: BreakoutGameDimensions) {
     const resourceManager = new ResourceManager(data.breakoutAssetsBaseURL);
     await game.init(gl, resourceManager, dimensions);
 
@@ -31,11 +23,7 @@
     console.debug("Game:", game);
     console.debug("Game state:", BreakoutGameState[game.state]);
     game.render(gl);
-  });
-
-  onDestroy(() => {
-    game.clearResources(glBinding);
-  });
+  }
 </script>
 
 <main class="flex min-h-screen items-center justify-center bg-black">
@@ -53,7 +41,7 @@
     bind:this={pauseMenu}
     class="m-auto"
     onclose={() => {
-      game.resume(glBinding);
+      game.resume(glExternal);
     }}
   >
     <div class="flex min-h-32 min-w-60 flex-col items-center justify-center">
@@ -74,5 +62,20 @@
     </div>
   </div>
 
-  <canvas bind:this={canvas}></canvas>
+  <canvas
+    bind:this={canvas}
+    {@attach (canvas) => {
+      const gl = canvas.getContext("webgl2");
+      if (!gl) {
+        return;
+      }
+      glExternal = gl;
+      const dimensions: BreakoutGameDimensions = { x: window.innerWidth, y: window.innerHeight };
+      resizeCanvas(canvas, gl, dimensions.x, dimensions.y);
+      setupGame(gl, dimensions);
+      return () => {
+        game.clearResources(gl);
+      };
+    }}
+  ></canvas>
 </main>
