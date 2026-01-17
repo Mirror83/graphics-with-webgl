@@ -1,6 +1,6 @@
 import { mat4, vec2, vec4 } from "gl-matrix";
 import { on } from "svelte/events";
-import { Ball, BALL_RADIUS, Paddle } from "~/lib/game/game-object";
+import { Ball, BALL_RADIUS, Block, Paddle } from "~/lib/game/game-object";
 import { BreakoutGameLevel } from "~/lib/game/level";
 import { ResourceManager } from "~/lib/game/resource-manager";
 import { SpriteRenderer } from "~/lib/game/sprite";
@@ -157,6 +157,42 @@ export class BreakoutGame {
     });
   }
 
+  /** @tutorial https://learnopengl.com/In-Practice/2D-Game/Collisions/Collision-detection */
+  #checkCollisionAABBAndCircle(ball: Ball, obstacle: Block | Paddle) {
+    const ballCenter = vec2.fromValues(
+      ball.position[0] + ball.radius,
+      ball.position[1] + ball.radius
+    );
+    const obstacleHalfExtents = vec2.fromValues(obstacle.size[0] / 2, obstacle.size[1] / 2);
+    const obstacleCenter = vec2.fromValues(
+      obstacle.position[0] + obstacleHalfExtents[0],
+      obstacle.position[1] + obstacleHalfExtents[1]
+    );
+    const difference = vec2.subtract(vec2.create(), ballCenter, obstacleCenter);
+    const clamped = vec2.fromValues(
+      Math.max(-obstacleHalfExtents[0], Math.min(difference[0], obstacleHalfExtents[0])),
+      Math.max(-obstacleHalfExtents[1], Math.min(difference[1], obstacleHalfExtents[1]))
+    );
+    const closest = vec2.add(vec2.create(), obstacleCenter, clamped);
+    const distance = vec2.subtract(vec2.create(), closest, ballCenter);
+    return vec2.length(distance) < ball.radius;
+  }
+
+  #getCurrentLevelBlocks() {
+    return this.#levels[this.#currentLevelIndex].blocks;
+  }
+
+  #checkAndHandleCollisions() {
+    if (!this.#ball) return;
+    for (const block of this.#getCurrentLevelBlocks()) {
+      if (block.destroyed) continue;
+      if (!this.#checkCollisionAABBAndCircle(this.#ball, block)) continue;
+      if (!block.isSolid) {
+        block.destroyed = true;
+      }
+    }
+  }
+
   update(dt: number) {
     if (this.state !== BreakoutGameState.ACTIVE) return;
     if (!this.#ball) return;
@@ -170,6 +206,7 @@ export class BreakoutGame {
       this.#ball.move(dt, this.windowSize ? this.windowSize.x : 0, ballPosition);
     } else {
       this.#ball.move(dt, this.windowSize ? this.windowSize.x : 0);
+      this.#checkAndHandleCollisions();
     }
   }
 
