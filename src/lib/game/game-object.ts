@@ -49,6 +49,8 @@ type PaddleProperties = Omit<BreakoutGameObjectProperties, "size" | "velocity"> 
 export class Paddle extends BreakoutGameObject {
   static readonly INITIAL_SIZE = vec2.fromValues(100, 20);
   static readonly INITIAL_VELOCITY = vec2.fromValues(800, 0);
+  static readonly Y_OFFSET = 10;
+
   constructor(properties: PaddleProperties) {
     super({
       ...properties,

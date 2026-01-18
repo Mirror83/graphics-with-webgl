@@ -107,7 +107,7 @@ export class BreakoutGame {
     }
 
     this.#paddle = new Paddle({
-      position: vec2.fromValues(windowSize.x / 2 - 50, windowSize.y - 30),
+      position: this.#getInitialPaddlePosition(this.windowSize),
       sprite: paddleSprite
     });
 
@@ -140,6 +140,13 @@ export class BreakoutGame {
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
     this.state = BreakoutGameState.ACTIVE;
+  }
+
+  #getInitialPaddlePosition(windowSize: BreakoutGameDimensions): vec2 {
+    return vec2.fromValues(
+      windowSize.x / 2 - Paddle.INITIAL_SIZE[0] / 2,
+      windowSize.y - (Paddle.INITIAL_SIZE[1] + Paddle.Y_OFFSET)
+    );
   }
 
   #ballPositionOnPaddleWhenStuck(
@@ -211,7 +218,7 @@ export class BreakoutGame {
     if (!this.#ball) return;
     if (!this.windowSize) return;
     const currentLevel = this.#getCurrentLevel();
-    this.#paddle.position = vec2.fromValues(this.windowSize.x / 2 - 50, this.windowSize.y - 30);
+    this.#paddle.position = this.#getInitialPaddlePosition(this.windowSize);
     this.#ball.stuck = true;
     const ballPosition = this.#ballPositionOnPaddleWhenStuck(
       this.#paddle.position,
@@ -313,7 +320,7 @@ export class BreakoutGame {
     } else {
       this.#ball.move(dt, this.windowSize.x);
       this.#checkAndHandleCollisions();
-      if (this.#ball.position[1] >= this.windowSize.y - 30) {
+      if (this.#ball.position[1] >= this.windowSize.y) {
         this.resetCurrentLevel();
       }
     }
