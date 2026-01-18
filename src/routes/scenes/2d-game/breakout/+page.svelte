@@ -19,9 +19,6 @@
     const resourceManager = new ResourceManager(data.breakoutAssetsBaseURL);
     await game.init(gl, resourceManager, dimensions);
 
-    console.debug("Game init complete.");
-    console.debug("Game:", game);
-    console.debug("Game state:", BreakoutGameState[game.state]);
     game.render(gl);
   }
 </script>
