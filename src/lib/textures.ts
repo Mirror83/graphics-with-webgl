@@ -63,6 +63,7 @@ export class Texture2D {
     gl.bindTexture(gl.TEXTURE_2D, this.id);
     gl.texImage2D(gl.TEXTURE_2D, mipmapLevel, internalFormat, srcFormat, srcType, data);
     gl.generateMipmap(gl.TEXTURE_2D);
+    gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
     // Unbind texture once done updating it.
     gl.bindTexture(gl.TEXTURE_2D, null);
   }

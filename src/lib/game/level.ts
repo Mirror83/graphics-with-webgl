@@ -61,6 +61,14 @@ export class BreakoutGameLevel {
     }
   }
 
+  reset() {
+    for (const block of this.blocks) {
+      if (!block.isSolid) {
+        block.destroyed = false;
+      }
+    }
+  }
+
   isCompleted(): boolean {
     return false;
   }

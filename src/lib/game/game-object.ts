@@ -41,44 +41,49 @@ class BreakoutGameObject {
 
 export class Block extends BreakoutGameObject {}
 
-export const INITIAL_PADDLE_SIZE = vec2.fromValues(100, 20);
-const INITIAL_PADDLE_VELOCITY = vec2.fromValues(500, 0);
-
 type PaddleProperties = Omit<BreakoutGameObjectProperties, "size" | "velocity"> & {
   size?: vec2;
   velocity?: vec2;
 };
 
 export class Paddle extends BreakoutGameObject {
-  static readonly INITIAL_SIZE = INITIAL_PADDLE_SIZE;
+  static readonly INITIAL_SIZE = vec2.fromValues(100, 20);
+  static readonly INITIAL_VELOCITY = vec2.fromValues(800, 0);
+  static readonly Y_OFFSET = 10;
+
   constructor(properties: PaddleProperties) {
     super({
       ...properties,
-      size: properties.size ?? INITIAL_PADDLE_SIZE,
-      velocity: properties.velocity ?? INITIAL_PADDLE_VELOCITY,
+      size: properties.size ?? Paddle.INITIAL_SIZE,
+      velocity: properties.velocity ?? Paddle.INITIAL_VELOCITY,
       isSolid: true
     });
   }
-}
 
-const INITIAL_BALL_VELOCITY = vec2.fromValues(100, -350);
-export const BALL_RADIUS = 12.5;
+  reset(position: vec2) {
+    this.position = position;
+  }
+}
 
 type BallProperties = Omit<BreakoutGameObjectProperties, "size"> & {
   radius?: number;
 };
 
 export class Ball extends BreakoutGameObject {
+  static readonly INITIAL_VELOCITY = vec2.fromValues(100, -350);
+  static readonly INITIAL_RADIUS = 12.5;
+  static readonly INITIAL_SIZE = vec2.fromValues(Ball.INITIAL_RADIUS * 2, Ball.INITIAL_RADIUS * 2);
   radius: number;
   stuck: boolean = true;
 
   constructor(properties: BallProperties) {
     super({
       ...properties,
-      velocity: properties.velocity ?? INITIAL_BALL_VELOCITY,
-      size: vec2.fromValues(BALL_RADIUS * 2, BALL_RADIUS * 2)
+      velocity:
+        properties.velocity ?? vec2.fromValues(Ball.INITIAL_VELOCITY[0], Ball.INITIAL_VELOCITY[1]),
+      size: vec2.fromValues(Ball.INITIAL_RADIUS * 2, Ball.INITIAL_RADIUS * 2)
     });
-    this.radius = properties.radius ?? BALL_RADIUS;
+    this.radius = properties.radius ?? Ball.INITIAL_RADIUS;
   }
 
   move(deltaTime: number, windowWidth: number, newPositionWhenStuck?: vec2): vec2 {
@@ -87,6 +92,7 @@ export class Ball extends BreakoutGameObject {
       return this.position;
     }
     this.position = vec2.scaleAndAdd(this.position, this.position, this.velocity, deltaTime);
+
     if (this.position[0] <= 0) {
       this.velocity[0] = -this.velocity[0];
       this.position[0] = 0;
@@ -101,7 +107,10 @@ export class Ball extends BreakoutGameObject {
     return this.position;
   }
 
-  reset(position: vec2, velocity: vec2) {
+  reset(
+    position: vec2,
+    velocity: vec2 = vec2.fromValues(Ball.INITIAL_VELOCITY[0], Ball.INITIAL_VELOCITY[1])
+  ) {
     this.position = position;
     this.velocity = velocity;
   }

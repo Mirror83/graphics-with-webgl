@@ -19,9 +19,6 @@
     const resourceManager = new ResourceManager(data.breakoutAssetsBaseURL);
     await game.init(gl, resourceManager, dimensions);
 
-    console.debug("Game init complete.");
-    console.debug("Game:", game);
-    console.debug("Game state:", BreakoutGameState[game.state]);
     game.render(gl);
   }
 </script>
@@ -36,6 +33,7 @@
         pauseMenu.showModal();
       }}><Pause /></button
     >
+    <div class="absolute top-8 right-8 text-white">FPS: {game.fps}</div>
   {/if}
   <dialog
     bind:this={pauseMenu}
@@ -45,13 +43,22 @@
     }}
   >
     <div class="flex min-h-32 min-w-60 flex-col items-center justify-center">
-      <p class="fonr-bold mb-4 text-xl font-bold">Breakout</p>
-      <button
-        class="rounded border p-2"
-        onclick={() => {
-          pauseMenu.close();
-        }}>Resume</button
-      >
+      <p class="mb-4 text-xl font-bold">Breakout</p>
+      <div class="space-y-2">
+        <button
+          class="rounded border p-2"
+          onclick={() => {
+            pauseMenu.close();
+          }}>Resume</button
+        >
+        <button
+          class="rounded border p-2"
+          onclick={() => {
+            game.resetCurrentLevel();
+            pauseMenu.close();
+          }}>Reset game</button
+        >
+      </div>
     </div>
   </dialog>
   <div class="absolute z-20 flex items-center justify-center">
