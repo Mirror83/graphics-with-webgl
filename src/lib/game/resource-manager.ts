@@ -44,7 +44,6 @@ export class ResourceManager {
     paths: ShaderSourcesRelativePaths
   ) {
     const sources = await this.#getShaderSources(paths);
-    console.debug("resource manager (loadShader):", sources);
     this.#shaders.set(name, new Shader(gl, sources));
   }
 
