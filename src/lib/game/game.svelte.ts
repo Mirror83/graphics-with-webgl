@@ -1,6 +1,7 @@
 import { mat4, vec2, vec4 } from "gl-matrix";
 import { on } from "svelte/events";
-import { Ball, BALL_RADIUS, Block, Paddle } from "~/lib/game/game-object";
+import { vectorDirection, type Direction } from "~/lib/game/direction";
+import { Ball, Block, Paddle } from "~/lib/game/game-object";
 import { BreakoutGameLevel } from "~/lib/game/level";
 import { ResourceManager } from "~/lib/game/resource-manager";
 import { SpriteRenderer } from "~/lib/game/sprite";
@@ -19,10 +20,23 @@ export type BreakoutGameDimensions = {
   y: number;
 };
 
+type NoCollision = {
+  isColliding: false;
+};
+
+type Collision = {
+  isColliding: true;
+  direction: Direction;
+  difference: vec2;
+};
+
+type CollisionResult = NoCollision | Collision;
+
 const NUMBER_OF_LEVELS = 4;
 
 export class BreakoutGame {
   state: BreakoutGameState = $state(BreakoutGameState.NOT_INITIALIZED);
+  fps: number = $state(0);
   windowSize: BreakoutGameDimensions | null = null;
   resourceManager: ResourceManager | null = null;
   #spriteRenderer: SpriteRenderer | null = null;
@@ -99,7 +113,8 @@ export class BreakoutGame {
 
     const ballPosition = this.#ballPositionOnPaddleWhenStuck(
       this.#paddle.position,
-      this.#paddle.size[0]
+      this.#paddle.size[0],
+      Ball.INITIAL_RADIUS
     );
     const ballSprite = this.resourceManager.getTexture("ball");
     if (!ballSprite) {
@@ -127,11 +142,15 @@ export class BreakoutGame {
     this.state = BreakoutGameState.ACTIVE;
   }
 
-  #ballPositionOnPaddleWhenStuck(paddlePosition: vec2, paddleWidth: number): vec2 {
+  #ballPositionOnPaddleWhenStuck(
+    paddlePosition: vec2,
+    paddleWidth: number,
+    ballRadius: number
+  ): vec2 {
     return vec2.add(
       vec2.create(),
       paddlePosition,
-      vec2.fromValues(paddleWidth / 2 - BALL_RADIUS, -BALL_RADIUS * 2.0)
+      vec2.fromValues(paddleWidth / 2 - ballRadius, -ballRadius * 2.0)
     );
   }
 
@@ -158,7 +177,7 @@ export class BreakoutGame {
   }
 
   /** @tutorial https://learnopengl.com/In-Practice/2D-Game/Collisions/Collision-detection */
-  #checkCollisionAABBAndCircle(ball: Ball, obstacle: Block | Paddle) {
+  #checkCollisionAABBAndCircle(ball: Ball, obstacle: Block | Paddle): CollisionResult {
     const ballCenter = vec2.fromValues(
       ball.position[0] + ball.radius,
       ball.position[1] + ball.radius
@@ -168,12 +187,20 @@ export class BreakoutGame {
       obstacle.position[0] + obstacleHalfExtents[0],
       obstacle.position[1] + obstacleHalfExtents[1]
     );
-    const difference = vec2.subtract(vec2.create(), ballCenter, obstacleCenter);
+    let difference = vec2.subtract(vec2.create(), ballCenter, obstacleCenter);
     const clamped = vec2.fromValues(
       Math.max(-obstacleHalfExtents[0], Math.min(difference[0], obstacleHalfExtents[0])),
       Math.max(-obstacleHalfExtents[1], Math.min(difference[1], obstacleHalfExtents[1]))
     );
     const closest = vec2.add(vec2.create(), obstacleCenter, clamped);
+    difference = vec2.subtract(vec2.create(), closest, ballCenter);
+    const isColliding = vec2.length(difference) < ball.radius;
+    if (!isColliding) {
+      return { isColliding };
+    }
+    const direction = vectorDirection(difference);
+    return { isColliding, direction, difference };
+  }
 
   #getCurrentLevel() {
     return this.#levels[this.#currentLevelIndex];
@@ -196,18 +223,78 @@ export class BreakoutGame {
   }
 
   #getCurrentLevelBlocks() {
-    return this.#levels[this.#currentLevelIndex].blocks;
+    return this.#getCurrentLevel().blocks;
+  }
+
+  #handleCollisionWithBlock(ball: Ball, block: Block, collision: Collision) {
+    if (!block.isSolid) {
+      block.destroyed = true;
+    }
+    const direction = collision.direction;
+    if (direction === "LEFT" || direction === "RIGHT") {
+      ball.velocity[0] = -ball.velocity[0];
+      const penetration = ball.radius - Math.abs(collision.difference[0]);
+      if (direction === "LEFT") {
+        ball.position[0] += penetration;
+      } else {
+        ball.position[0] -= penetration;
+      }
+    } else {
+      ball.velocity[1] = -ball.velocity[1];
+      const penetration = ball.radius - Math.abs(collision.difference[1]);
+      if (direction === "UP") {
+        ball.position[1] -= penetration;
+      } else {
+        ball.position[1] += penetration;
+      }
+    }
+  }
+
+  #handleCollisionWithPaddle(ball: Ball, paddle: Paddle, collision: Collision) {
+    const direction = collision.direction;
+    if (direction === "LEFT" || direction === "RIGHT") {
+      ball.velocity[0] = -ball.velocity[0];
+      const penetration = ball.radius - Math.abs(collision.difference[0]);
+      if (direction === "LEFT") {
+        ball.position[0] += penetration;
+      } else {
+        ball.position[0] -= penetration;
+      }
+    } else {
+      ball.velocity[1] = -ball.velocity[1];
+      const penetration = ball.radius - Math.abs(collision.difference[1]);
+      if (direction === "UP") {
+        ball.position[1] -= penetration;
+      } else {
+        ball.position[1] += penetration;
+      }
+    }
+    const paddleCenterX = paddle.position[0] + paddle.size[0] / 2;
+    const distanceFromPaddleCenter = ball.position[0] + ball.radius - paddleCenterX;
+    const percentage = distanceFromPaddleCenter / (paddle.size[0] / 2);
+    const strength = 2.0;
+    const oldSpeed = vec2.length(ball.velocity);
+    ball.velocity[0] = Paddle.INITIAL_VELOCITY[0] * percentage * strength;
+    ball.velocity[1] = -1.0 * Math.abs(ball.velocity[1]);
+    vec2.normalize(ball.velocity, ball.velocity);
+    vec2.scale(ball.velocity, ball.velocity, oldSpeed);
   }
 
   #checkAndHandleCollisions() {
     if (!this.#ball) return;
+    if (this.#ball.stuck) return;
+    if (!this.#paddle) return;
+
     for (const block of this.#getCurrentLevelBlocks()) {
       if (block.destroyed) continue;
-      if (!this.#checkCollisionAABBAndCircle(this.#ball, block)) continue;
-      if (!block.isSolid) {
-        block.destroyed = true;
-      }
+      const blockCollisionResult = this.#checkCollisionAABBAndCircle(this.#ball, block);
+      if (!blockCollisionResult.isColliding) continue;
+      this.#handleCollisionWithBlock(this.#ball, block, blockCollisionResult);
     }
+
+    const paddleCollisionResult = this.#checkCollisionAABBAndCircle(this.#ball, this.#paddle);
+    if (!paddleCollisionResult.isColliding) return;
+    this.#handleCollisionWithPaddle(this.#ball, this.#paddle, paddleCollisionResult);
   }
 
   update(dt: number) {
@@ -259,6 +346,7 @@ export class BreakoutGame {
 
     this.#requestAnimationFrameId = requestAnimationFrame((time) => {
       updateRenderTime(this.#renderTime, time);
+      this.fps = Math.round(1 / this.#renderTime.deltaTime);
       this.render(gl);
     });
   }
