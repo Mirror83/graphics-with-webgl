@@ -174,8 +174,25 @@ export class BreakoutGame {
       Math.max(-obstacleHalfExtents[1], Math.min(difference[1], obstacleHalfExtents[1]))
     );
     const closest = vec2.add(vec2.create(), obstacleCenter, clamped);
-    const distance = vec2.subtract(vec2.create(), closest, ballCenter);
-    return vec2.length(distance) < ball.radius;
+
+  #getCurrentLevel() {
+    return this.#levels[this.#currentLevelIndex];
+  }
+
+  resetCurrentLevel() {
+    if (!this.#paddle) return;
+    if (!this.#ball) return;
+    if (!this.windowSize) return;
+    const currentLevel = this.#getCurrentLevel();
+    this.#paddle.position = vec2.fromValues(this.windowSize.x / 2 - 50, this.windowSize.y - 30);
+    this.#ball.stuck = true;
+    const ballPosition = this.#ballPositionOnPaddleWhenStuck(
+      this.#paddle.position,
+      this.#paddle.size[0],
+      this.#ball.radius
+    );
+    this.#ball.reset(ballPosition);
+    currentLevel.reset();
   }
 
   #getCurrentLevelBlocks() {
@@ -197,16 +214,21 @@ export class BreakoutGame {
     if (this.state !== BreakoutGameState.ACTIVE) return;
     if (!this.#ball) return;
     if (!this.#paddle) return;
+    if (!this.windowSize) return;
 
     if (this.#ball.stuck) {
       const ballPosition = this.#ballPositionOnPaddleWhenStuck(
         this.#paddle.position,
-        this.#paddle.size[0]
+        this.#paddle.size[0],
+        this.#ball.radius
       );
-      this.#ball.move(dt, this.windowSize ? this.windowSize.x : 0, ballPosition);
+      this.#ball.move(dt, this.windowSize.x, ballPosition);
     } else {
-      this.#ball.move(dt, this.windowSize ? this.windowSize.x : 0);
+      this.#ball.move(dt, this.windowSize.x);
       this.#checkAndHandleCollisions();
+      if (this.#ball.position[1] >= this.windowSize.y - 30) {
+        this.resetCurrentLevel();
+      }
     }
   }
 
