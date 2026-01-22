@@ -3,6 +3,7 @@ import { on } from "svelte/events";
 import { vectorDirection, type Direction } from "~/lib/game/direction";
 import { Ball, Block, Paddle } from "~/lib/game/game-object";
 import { BreakoutGameLevel } from "~/lib/game/level";
+import { ParticleGenerator } from "~/lib/game/particle";
 import { ResourceManager } from "~/lib/game/resource-manager";
 import { SpriteRenderer } from "~/lib/game/sprite";
 import { updateRenderTime, type RenderTime } from "~/lib/render";
@@ -47,6 +48,7 @@ export class BreakoutGame {
   #renderTime: RenderTime = { deltaTime: 0, previousTime: 0 };
   #inputHandlerDisposers: Array<() => void> = [];
   #requestAnimationFrameId: number | null = null;
+  #particleGenerator: ParticleGenerator | null = null;
 
   setWindowSize(size: BreakoutGameDimensions) {
     this.windowSize = size;
@@ -70,7 +72,13 @@ export class BreakoutGame {
       this.resourceManager.loadTexture(gl, "block_solid", "textures/block_solid.png"),
       this.resourceManager.loadTexture(gl, "block", "textures/block.png"),
       this.resourceManager.loadTexture(gl, "background", "textures/background.jpg"),
-      this.resourceManager.loadTexture(gl, "paddle", "textures/paddle.png")
+      this.resourceManager.loadTexture(gl, "paddle", "textures/paddle.png"),
+
+      this.resourceManager.loadShader(gl, "particle", {
+        vertex: "shaders/particle.vert",
+        fragment: "shaders/particle.frag"
+      }),
+      this.resourceManager.loadTexture(gl, "particle", "textures/particle.png")
     ]);
     // These define the size of the near and far planes of the orthographic projection
     // (their top-left and bottom-right corners)
@@ -129,11 +137,28 @@ export class BreakoutGame {
     spriteShader
       .use(gl)
       .setUniform(gl, "spriteImage", { type: "int", value: 0 })
-      .setUniform(gl, "projection", { type: "mat4-float", value: projection });
+      .setUniform(gl, "projection", { type: "mat4-float", value: projection })
+      .finishUse(gl);
 
     const renderer = new SpriteRenderer(spriteShader);
     renderer.init(gl);
     this.#spriteRenderer = renderer;
+
+    const particleShader = this.resourceManager.getShader("particle");
+    if (!particleShader) {
+      throw new Error("Particle shader not found in resource manager");
+    }
+    particleShader
+      .use(gl)
+      .setUniform(gl, "projection", { type: "mat4-float", value: projection })
+      .finishUse(gl);
+    const particleTexture = this.resourceManager.getTexture("particle");
+    if (!particleTexture) {
+      throw new Error("Particle texture not found in resource manager");
+    }
+
+    this.#particleGenerator = new ParticleGenerator(gl, particleShader, particleTexture);
+
     this.#inputHandlerDisposers.push(this.#configurePaddleMovementInputHandler());
 
     gl.enable(gl.BLEND);
@@ -217,6 +242,8 @@ export class BreakoutGame {
     if (!this.#paddle) return;
     if (!this.#ball) return;
     if (!this.windowSize) return;
+    if (!this.#particleGenerator) return;
+
     const currentLevel = this.#getCurrentLevel();
     this.#paddle.position = this.#getInitialPaddlePosition(this.windowSize);
     this.#ball.stuck = true;
@@ -226,6 +253,7 @@ export class BreakoutGame {
       this.#ball.radius
     );
     this.#ball.reset(ballPosition);
+    this.#particleGenerator.killAllParticles();
     currentLevel.reset();
   }
 
@@ -309,6 +337,7 @@ export class BreakoutGame {
     if (!this.#ball) return;
     if (!this.#paddle) return;
     if (!this.windowSize) return;
+    if (!this.#particleGenerator) return;
 
     if (this.#ball.stuck) {
       const ballPosition = this.#ballPositionOnPaddleWhenStuck(
@@ -323,6 +352,11 @@ export class BreakoutGame {
       if (this.#ball.position[1] >= this.windowSize.y) {
         this.resetCurrentLevel();
       }
+      this.#particleGenerator.update(
+        dt,
+        this.#ball,
+        vec2.fromValues(this.#ball.radius / 2, this.#ball.radius / 2)
+      );
     }
   }
 
@@ -335,6 +369,7 @@ export class BreakoutGame {
     if (!this.#paddle) return;
     if (!this.#ball) return;
     if (this.state !== BreakoutGameState.ACTIVE) return;
+    if (!this.#particleGenerator) return;
 
     this.#spriteRenderer.drawSprite(
       gl,
@@ -350,6 +385,7 @@ export class BreakoutGame {
     this.#levels[this.#currentLevelIndex].draw(gl, this.#spriteRenderer);
     this.#paddle.draw(gl, this.#spriteRenderer);
     this.#ball.draw(gl, this.#spriteRenderer);
+    this.#particleGenerator.drawParticles(gl);
 
     this.#requestAnimationFrameId = requestAnimationFrame((time) => {
       updateRenderTime(this.#renderTime, time);

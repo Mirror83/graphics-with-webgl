@@ -1,4 +1,4 @@
-import type { mat4, vec3, vec4 } from "gl-matrix";
+import type { mat4, vec2, vec3, vec4 } from "gl-matrix";
 
 type ShaderType =
   | WebGL2RenderingContext["VERTEX_SHADER"]
@@ -12,6 +12,11 @@ export type ShaderSources = {
 type NumberUniformValue = {
   type: "float" | "int";
   value: number;
+};
+
+type Vec2UniformValue = {
+  type: "vec2";
+  value: vec2;
 };
 
 type Vec3UniformValue = {
@@ -29,7 +34,12 @@ type Mat4UniformValue = {
   value: mat4;
 };
 
-type UniformValue = NumberUniformValue | Vec3UniformValue | Vec4UniformValue | Mat4UniformValue;
+type UniformValue =
+  | NumberUniformValue
+  | Vec2UniformValue
+  | Vec3UniformValue
+  | Vec4UniformValue
+  | Mat4UniformValue;
 
 type UniformDetails = {
   name: string;
@@ -105,6 +115,9 @@ export function setUniform(
       break;
     case "int":
       gl.uniform1i(location, details.value);
+      break;
+    case "vec2":
+      gl.uniform2fv(location, details.value);
       break;
     case "vec3":
       gl.uniform3fv(location, details.value);
