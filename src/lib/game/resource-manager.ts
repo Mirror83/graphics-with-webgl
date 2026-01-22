@@ -1,8 +1,8 @@
 import { Shader, type ShaderSources } from "~/lib/shaders";
 import { Texture2D } from "~/lib/textures";
 
-type TextureName = "ball" | "block_solid" | "block" | "background" | "paddle";
-type ShaderName = "sprite";
+type TextureName = "ball" | "block_solid" | "block" | "background" | "paddle" | "particle";
+type ShaderName = "sprite" | "particle";
 
 type Fetch = typeof fetch;
 
