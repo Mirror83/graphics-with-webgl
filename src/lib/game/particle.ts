@@ -150,6 +150,13 @@ export class ParticleGenerator {
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
   }
 
+  killAllParticles() {
+    for (const particle of this.#particles) {
+      particle.lifetime = 0;
+    }
+    this.#lastUsedParticle = 0;
+  }
+
   /** Update all particle attributes */
   update(
     dt: number,

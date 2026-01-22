@@ -242,6 +242,8 @@ export class BreakoutGame {
     if (!this.#paddle) return;
     if (!this.#ball) return;
     if (!this.windowSize) return;
+    if (!this.#particleGenerator) return;
+
     const currentLevel = this.#getCurrentLevel();
     this.#paddle.position = this.#getInitialPaddlePosition(this.windowSize);
     this.#ball.stuck = true;
@@ -251,6 +253,7 @@ export class BreakoutGame {
       this.#ball.radius
     );
     this.#ball.reset(ballPosition);
+    this.#particleGenerator.killAllParticles();
     currentLevel.reset();
   }
 
