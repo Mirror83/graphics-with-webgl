@@ -13,7 +13,7 @@ type BreakoutGameObjectProperties = {
   destroyed?: boolean;
 };
 
-class BreakoutGameObject {
+export class BreakoutGameObject {
   position: vec2;
   size: vec2;
   velocity: vec2;
