@@ -80,7 +80,7 @@ export class ResourceManager {
     const textureData = await this.#loadTexImageSource(url);
 
     const texture = new Texture2D();
-    texture.init(gl, textureData);
+    texture.init(gl, { data: textureData });
     this.#textures.set(name, texture);
   }
 

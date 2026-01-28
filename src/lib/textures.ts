@@ -56,8 +56,8 @@ type Texture2DWrapOptions = {
 };
 
 type Texture2DFilterOptions = {
-  filterMin: GLenum;
-  filterMax: GLenum;
+  minFilter: GLenum;
+  maxFilter: GLenum;
 };
 
 interface Texture2DConfig {
@@ -94,8 +94,8 @@ export class Texture2D {
       wrapT: WebGL2RenderingContext.REPEAT
     },
     filterOptions = {
-      filterMax: WebGL2RenderingContext.LINEAR,
-      filterMin: WebGL2RenderingContext.LINEAR
+      minFilter: WebGL2RenderingContext.LINEAR,
+      maxFilter: WebGL2RenderingContext.LINEAR
     }
   }: Partial<Texture2DConfig> = {}) {
     this.mipmapLevel = mipmapLevel;
@@ -108,7 +108,10 @@ export class Texture2D {
     this.filterOptions = filterOptions;
   }
 
-  init(gl: WebGL2RenderingContext, data?: TexImageSource) {
+  init(
+    gl: WebGL2RenderingContext,
+    { data, generateMipmaps = true }: { data?: TexImageSource; generateMipmaps?: boolean } = {}
+  ) {
     this.id = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, this.id);
     if (!data) {
@@ -135,8 +138,17 @@ export class Texture2D {
         data
       );
     }
-    gl.generateMipmap(gl.TEXTURE_2D);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+
+    // Mipmaps may not be needed for certain textures
+    // (e.g., framebuffer attachments).
+    if (generateMipmaps) {
+      gl.generateMipmap(gl.TEXTURE_2D);
+    }
+    // Set texture wrapping and filtering options.
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, this.wrapOptions.wrapS);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, this.wrapOptions.wrapT);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, this.filterOptions.minFilter);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, this.filterOptions.maxFilter);
 
     // Unbind texture once done updating it.
     gl.bindTexture(gl.TEXTURE_2D, null);
