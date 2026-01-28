@@ -80,12 +80,7 @@ export class ResourceManager {
     const textureData = await this.#loadTexImageSource(url);
 
     const texture = new Texture2D();
-    const mipmapLevel = 0;
-    const internalFormat = gl.RGBA;
-    const srcFormat = gl.RGBA;
-    const srcType = gl.UNSIGNED_BYTE;
-
-    texture.init(gl, textureData, mipmapLevel, internalFormat, srcFormat, srcType);
+    texture.init(gl, textureData);
     this.#textures.set(name, texture);
   }
 
