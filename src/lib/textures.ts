@@ -1,3 +1,5 @@
+import type { BreakoutGameDimensions } from "~/lib/game/game.svelte";
+
 /** Initialize a texture (with a single pixel) and load an image.
  * This is done because the image loading is asynchronous; using the pixel initially makes the texture
  * available for use immediately.
@@ -48,22 +50,94 @@ export function loadTexture(gl: WebGLRenderingContext, url: string): WebGLTextur
   return texture;
 }
 
+type Texture2DWrapOptions = {
+  wrapS: GLenum;
+  wrapT: GLenum;
+};
+
+type Texture2DFilterOptions = {
+  filterMin: GLenum;
+  filterMax: GLenum;
+};
+
+interface Texture2DConfig {
+  mipmapLevel: number;
+  size?: BreakoutGameDimensions;
+  border: number;
+  internalFormat: GLenum;
+  srcFormat: GLenum;
+  srcType: GLenum;
+  wrapOptions: Texture2DWrapOptions;
+  filterOptions: Texture2DFilterOptions;
+}
+
 export class Texture2D {
   id: WebGLTexture | null = null;
+  mipmapLevel: number;
+  size?: BreakoutGameDimensions;
+  border: number;
+  internalFormat: GLenum;
+  srcFormat: GLenum;
+  srcType: GLenum;
+  wrapOptions: Texture2DWrapOptions;
+  filterOptions: Texture2DFilterOptions;
 
-  async init(
-    gl: WebGL2RenderingContext,
-    data: TexImageSource,
-    mipmapLevel: number,
-    internalFormat: number,
-    srcFormat: number,
-    srcType: number
-  ) {
+  constructor({
+    mipmapLevel = 0,
+    size,
+    border = 0,
+    internalFormat = WebGL2RenderingContext.RGBA,
+    srcFormat = WebGL2RenderingContext.RGBA,
+    srcType = WebGL2RenderingContext.UNSIGNED_BYTE,
+    wrapOptions = {
+      wrapS: WebGL2RenderingContext.REPEAT,
+      wrapT: WebGL2RenderingContext.REPEAT
+    },
+    filterOptions = {
+      filterMax: WebGL2RenderingContext.LINEAR,
+      filterMin: WebGL2RenderingContext.LINEAR
+    }
+  }: Partial<Texture2DConfig> = {}) {
+    this.mipmapLevel = mipmapLevel;
+    this.internalFormat = internalFormat;
+    this.srcFormat = srcFormat;
+    this.srcType = srcType;
+    this.size = size;
+    this.border = border;
+    this.wrapOptions = wrapOptions;
+    this.filterOptions = filterOptions;
+  }
+
+  init(gl: WebGL2RenderingContext, data?: TexImageSource) {
     this.id = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, this.id);
-    gl.texImage2D(gl.TEXTURE_2D, mipmapLevel, internalFormat, srcFormat, srcType, data);
+    if (!data) {
+      if (!this.size)
+        throw new Error("Texture size must be provided in the constructor if no data is given.");
+      gl.texImage2D(
+        gl.TEXTURE_2D,
+        this.mipmapLevel,
+        this.size.x,
+        this.size.y,
+        this.border,
+        this.internalFormat,
+        this.srcFormat,
+        this.srcType,
+        null
+      );
+    } else {
+      gl.texImage2D(
+        gl.TEXTURE_2D,
+        this.mipmapLevel,
+        this.internalFormat,
+        this.srcFormat,
+        this.srcType,
+        data
+      );
+    }
     gl.generateMipmap(gl.TEXTURE_2D);
-    gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+
     // Unbind texture once done updating it.
     gl.bindTexture(gl.TEXTURE_2D, null);
   }
