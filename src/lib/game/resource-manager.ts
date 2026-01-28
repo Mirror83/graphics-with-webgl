@@ -77,11 +77,11 @@ export class ResourceManager {
 
   async loadTexture(gl: WebGL2RenderingContext, name: TextureName, path: string) {
     const url = `${this.#breakoutAssetsBaseURL}/${path}`;
-    const textureData = await this.#loadTexImageSource(url);
+    const imageData = await this.#loadTexImageSource(url);
 
-    const texture = new Texture2D();
-    texture.init(gl, { data: textureData });
-    this.#textures.set(name, texture);
+    const imageTexture = new Texture2D();
+    imageTexture.init(gl, { kind: "image", data: imageData });
+    this.#textures.set(name, imageTexture);
   }
 
   async loadLevelText(path: string): Promise<string> {

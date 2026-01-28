@@ -60,9 +60,20 @@ type Texture2DFilterOptions = {
   maxFilter: GLenum;
 };
 
+type Texture2DFramebufferAttachmentInit = {
+  kind: "framebuffer-attachment";
+  size: BreakoutGameDimensions;
+};
+
+type Texture2DImageInit = {
+  kind: "image";
+  data: TexImageSource;
+};
+
+type Texture2DInitOptions = Texture2DFramebufferAttachmentInit | Texture2DImageInit;
+
 interface Texture2DConfig {
   mipmapLevel: number;
-  size?: BreakoutGameDimensions;
   border: number;
   internalFormat: GLenum;
   srcFormat: GLenum;
@@ -74,7 +85,6 @@ interface Texture2DConfig {
 export class Texture2D {
   id: WebGLTexture | null = null;
   mipmapLevel: number;
-  size?: BreakoutGameDimensions;
   border: number;
   internalFormat: GLenum;
   srcFormat: GLenum;
@@ -84,7 +94,6 @@ export class Texture2D {
 
   constructor({
     mipmapLevel = 0,
-    size,
     border = 0,
     internalFormat = WebGL2RenderingContext.RGBA,
     srcFormat = WebGL2RenderingContext.RGBA,
@@ -102,54 +111,49 @@ export class Texture2D {
     this.internalFormat = internalFormat;
     this.srcFormat = srcFormat;
     this.srcType = srcType;
-    this.size = size;
     this.border = border;
     this.wrapOptions = wrapOptions;
     this.filterOptions = filterOptions;
   }
 
-  init(
-    gl: WebGL2RenderingContext,
-    { data, generateMipmaps = true }: { data?: TexImageSource; generateMipmaps?: boolean } = {}
-  ) {
+  init(gl: WebGL2RenderingContext, options: Texture2DInitOptions) {
     this.id = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, this.id);
-    if (!data) {
-      if (!this.size)
-        throw new Error("Texture size must be provided in the constructor if no data is given.");
-      gl.texImage2D(
-        gl.TEXTURE_2D,
-        this.mipmapLevel,
-        this.size.x,
-        this.size.y,
-        this.border,
-        this.internalFormat,
-        this.srcFormat,
-        this.srcType,
-        null
-      );
-    } else {
-      gl.texImage2D(
-        gl.TEXTURE_2D,
-        this.mipmapLevel,
-        this.internalFormat,
-        this.srcFormat,
-        this.srcType,
-        data
-      );
-    }
 
-    // Mipmaps may not be needed for certain textures
-    // (e.g., framebuffer attachments).
-    if (generateMipmaps) {
-      gl.generateMipmap(gl.TEXTURE_2D);
+    switch (options.kind) {
+      case "framebuffer-attachment":
+        gl.texImage2D(
+          gl.TEXTURE_2D,
+          this.mipmapLevel,
+          this.internalFormat,
+          options.size.x,
+          options.size.y,
+          this.border,
+          this.srcFormat,
+          this.srcType,
+          null
+        );
+        // Set texture filtering options only.
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, this.filterOptions.minFilter);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, this.filterOptions.maxFilter);
+        break;
+      case "image":
+        gl.texImage2D(
+          gl.TEXTURE_2D,
+          this.mipmapLevel,
+          this.internalFormat,
+          this.srcFormat,
+          this.srcType,
+          options.data
+        );
+        gl.generateMipmap(gl.TEXTURE_2D);
+        // Set texture wrapping and filtering options.
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, this.wrapOptions.wrapS);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, this.wrapOptions.wrapT);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, this.filterOptions.minFilter);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, this.filterOptions.maxFilter);
+        break;
     }
-    // Set texture wrapping and filtering options.
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, this.wrapOptions.wrapS);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, this.wrapOptions.wrapT);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, this.filterOptions.minFilter);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, this.filterOptions.maxFilter);
-
     // Unbind texture once done updating it.
     gl.bindTexture(gl.TEXTURE_2D, null);
   }
