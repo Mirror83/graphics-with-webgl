@@ -25,14 +25,18 @@ type ShakeActivationParams = {
 type BreakoutPostProcessingEffectActivationParams = ShakeActivationParams;
 
 export class BreakoutPostProcessor {
+  static readonly NUMBER_OF_SAMPLES_MULTI_SAMPLING = 4;
   screenSize: BreakoutGameDimensions;
 
   postProcessingShader: Shader;
   screenTexture: Texture2D;
 
   /** The frame buffer object which the screen texture is attached to for intermediate rendering. */
-  #framebufferObject: WebGLFramebuffer | null = null;
+  #screenTextureFbo: WebGLFramebuffer | null = null;
   #screenTextureQuadVao: WebGLVertexArrayObject | null = null;
+
+  #multiSampleFbo: WebGLFramebuffer | null = null;
+  #multiSampleRbo: WebGLRenderbuffer | null = null;
 
   effects: BreakoutEffects = {
     shake: {
@@ -45,13 +49,35 @@ export class BreakoutPostProcessor {
   constructor(shader: Shader, screenSize: BreakoutGameDimensions) {
     this.postProcessingShader = shader;
     this.screenSize = screenSize;
-    this.screenTexture = new Texture2D();
+    this.screenTexture = new Texture2D({ internalFormat: WebGL2RenderingContext.RGBA8 });
   }
 
   init(gl: WebGL2RenderingContext) {
-    this.#framebufferObject = gl.createFramebuffer();
+    this.#screenTextureFbo = gl.createFramebuffer();
 
-    gl.bindFramebuffer(gl.FRAMEBUFFER, this.#framebufferObject);
+    this.#multiSampleFbo = gl.createFramebuffer();
+    this.#multiSampleRbo = gl.createRenderbuffer();
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.#multiSampleFbo);
+    gl.bindRenderbuffer(gl.RENDERBUFFER, this.#multiSampleRbo);
+    gl.renderbufferStorageMultisample(
+      gl.RENDERBUFFER,
+      BreakoutPostProcessor.NUMBER_OF_SAMPLES_MULTI_SAMPLING,
+      this.screenTexture.internalFormat,
+      this.screenSize.x,
+      this.screenSize.y
+    );
+    gl.framebufferRenderbuffer(
+      gl.FRAMEBUFFER,
+      gl.COLOR_ATTACHMENT0,
+      gl.RENDERBUFFER,
+      this.#multiSampleRbo
+    );
+    if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE) {
+      throw new Error("Failed to initialize Multisample framebuffer object.");
+    }
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.#screenTextureFbo);
     this.screenTexture.init(gl, { kind: "framebuffer-attachment", size: this.screenSize });
     gl.framebufferTexture2D(
       gl.FRAMEBUFFER,
@@ -63,6 +89,9 @@ export class BreakoutPostProcessor {
     if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE) {
       throw new Error("Error in BreakoutPostProcessor: Failed to initialize framebuffer object.");
     }
+    // Unbind screen framebuffer after setup
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
     this.#initScreenTextureQuadVao(gl);
     const offset = 1 / 300;
     // prettier-ignore
@@ -92,9 +121,6 @@ export class BreakoutPostProcessor {
       .setUniform(gl, "kernelOffsets", { type: "vec2f-array", value: kernelOffsets })
       .setUniform(gl, "blurKernel", { type: "float-array", value: blurKernel })
       .finishUse(gl);
-
-    // Unbind framebuffer after setup
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   }
 
   #initScreenTextureQuadVao(gl: WebGL2RenderingContext) {
@@ -134,14 +160,30 @@ export class BreakoutPostProcessor {
   }
 
   beginRenderToScreenTexture(gl: WebGL2RenderingContext) {
-    gl.bindFramebuffer(gl.FRAMEBUFFER, this.#framebufferObject);
-    gl.clearColor(0.0, 0.0, 0.0, 0.0);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.#multiSampleFbo);
+    gl.clearColor(0.0, 0.0, 0.0, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
   }
 
   endRenderToScreenTexture(gl: WebGL2RenderingContext) {
+    // Resolve multi-sampled colour buffer into the screen texture frame buffer
+    gl.bindFramebuffer(gl.READ_FRAMEBUFFER, this.#multiSampleFbo);
+    gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, this.#screenTextureFbo);
+    gl.blitFramebuffer(
+      0,
+      0,
+      this.screenSize.x,
+      this.screenSize.y,
+      0,
+      0,
+      this.screenSize.x,
+      this.screenSize.y,
+      gl.COLOR_BUFFER_BIT,
+      gl.LINEAR
+    );
+    // Bind both read and draw frame buffers to the default frame buffer
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-    gl.clearColor(0.0, 0.0, 0.0, 0.0);
+    gl.clearColor(0.0, 0.0, 0.0, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
   }
 
