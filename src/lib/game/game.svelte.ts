@@ -4,6 +4,7 @@ import { vectorDirection, type Direction } from "~/lib/game/direction";
 import { Ball, Block, Paddle } from "~/lib/game/game-object";
 import { BreakoutGameLevel } from "~/lib/game/level";
 import { ParticleGenerator } from "~/lib/game/particle";
+import { BreakoutPostProcessor } from "~/lib/game/post-processor";
 import { ResourceManager } from "~/lib/game/resource-manager";
 import { SpriteRenderer } from "~/lib/game/sprite";
 import { updateRenderTime, type RenderTime } from "~/lib/render";
@@ -49,6 +50,7 @@ export class BreakoutGame {
   #inputHandlerDisposers: Array<() => void> = [];
   #requestAnimationFrameId: number | null = null;
   #particleGenerator: ParticleGenerator | null = null;
+  #postProcessor: BreakoutPostProcessor | null = null;
 
   setWindowSize(size: BreakoutGameDimensions) {
     this.windowSize = size;
@@ -78,7 +80,12 @@ export class BreakoutGame {
         vertex: "shaders/particle.vert",
         fragment: "shaders/particle.frag"
       }),
-      this.resourceManager.loadTexture(gl, "particle", "textures/particle.png")
+      this.resourceManager.loadTexture(gl, "particle", "textures/particle.png"),
+
+      this.resourceManager.loadShader(gl, "post-processing", {
+        vertex: "shaders/post-processing.vert",
+        fragment: "shaders/post-processing.frag"
+      })
     ]);
     // These define the size of the near and far planes of the orthographic projection
     // (their top-left and bottom-right corners)
@@ -158,6 +165,14 @@ export class BreakoutGame {
     }
 
     this.#particleGenerator = new ParticleGenerator(gl, particleShader, particleTexture);
+
+    const postProcessingShader = this.resourceManager.getShader("post-processing");
+    if (!postProcessingShader) {
+      throw new Error("Post-processing shader not found in resource manager");
+    }
+
+    this.#postProcessor = new BreakoutPostProcessor(postProcessingShader, this.windowSize);
+    this.#postProcessor.init(gl);
 
     this.#inputHandlerDisposers.push(this.#configurePaddleMovementInputHandler());
 
@@ -254,6 +269,7 @@ export class BreakoutGame {
     );
     this.#ball.reset(ballPosition);
     this.#particleGenerator.killAllParticles();
+    this.#postProcessor?.resetEffects();
     currentLevel.reset();
   }
 
@@ -264,6 +280,8 @@ export class BreakoutGame {
   #handleCollisionWithBlock(ball: Ball, block: Block, collision: Collision) {
     if (!block.isSolid) {
       block.destroyed = true;
+    } else {
+      this.#postProcessor?.activateEffect({ effectName: "shake", collisionWith: "wall" });
     }
     const direction = collision.direction;
     if (direction === "LEFT" || direction === "RIGHT") {
@@ -347,7 +365,10 @@ export class BreakoutGame {
       );
       this.#ball.move(dt, this.windowSize.x, ballPosition);
     } else {
-      this.#ball.move(dt, this.windowSize.x);
+      const { collidedWithWall: collidedWithWindowBorder } = this.#ball.move(dt, this.windowSize.x);
+      if (collidedWithWindowBorder) {
+        this.#postProcessor?.activateEffect({ effectName: "shake", collisionWith: "wall" });
+      }
       this.#checkAndHandleCollisions();
       if (this.#ball.position[1] >= this.windowSize.y) {
         this.resetCurrentLevel();
@@ -357,6 +378,7 @@ export class BreakoutGame {
         this.#ball,
         vec2.fromValues(this.#ball.radius / 2, this.#ball.radius / 2)
       );
+      this.#postProcessor?.updateEffects(dt);
     }
   }
 
@@ -371,6 +393,8 @@ export class BreakoutGame {
     if (this.state !== BreakoutGameState.ACTIVE) return;
     if (!this.#particleGenerator) return;
 
+    this.#postProcessor?.beginRenderToScreenTexture(gl);
+
     this.#spriteRenderer.drawSprite(
       gl,
       backgroundTexture,
@@ -382,10 +406,14 @@ export class BreakoutGame {
 
     this.update(this.#renderTime.deltaTime);
 
-    this.#levels[this.#currentLevelIndex].draw(gl, this.#spriteRenderer);
+    this.#getCurrentLevel().draw(gl, this.#spriteRenderer);
     this.#paddle.draw(gl, this.#spriteRenderer);
     this.#ball.draw(gl, this.#spriteRenderer);
     this.#particleGenerator.drawParticles(gl);
+
+    this.#postProcessor?.endRenderToScreenTexture(gl);
+    const timeInSeconds = this.#renderTime.previousTime / 1000;
+    this.#postProcessor?.renderWithPostProcessing(gl, timeInSeconds);
 
     this.#requestAnimationFrameId = requestAnimationFrame((time) => {
       updateRenderTime(this.#renderTime, time);
@@ -401,6 +429,7 @@ export class BreakoutGame {
       this.state = BreakoutGameState.PAUSED;
     }
   }
+
   resume(gl: WebGL2RenderingContext) {
     if (this.state === BreakoutGameState.PAUSED) {
       this.state = BreakoutGameState.ACTIVE;
