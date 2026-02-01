@@ -86,33 +86,12 @@ export class Ball extends BreakoutGameObject {
     this.radius = properties.radius ?? Ball.INITIAL_RADIUS;
   }
 
-  move(
-    deltaTime: number,
-    windowWidth: number,
-    newPositionWhenStuck?: vec2
-  ): { position: vec2; collidedWithWall: boolean } {
-    let collidedWithWall = false;
+  move(deltaTime: number, newPositionWhenStuck?: vec2) {
     if (this.stuck) {
       this.position = newPositionWhenStuck ? newPositionWhenStuck : this.position;
-      return { position: this.position, collidedWithWall };
+    } else {
+      this.position = vec2.scaleAndAdd(this.position, this.position, this.velocity, deltaTime);
     }
-    this.position = vec2.scaleAndAdd(this.position, this.position, this.velocity, deltaTime);
-
-    if (this.position[0] <= 0) {
-      this.velocity[0] = -this.velocity[0];
-      this.position[0] = 0;
-      collidedWithWall = true;
-    } else if (this.position[0] + this.size[0] >= windowWidth) {
-      this.velocity[0] = -this.velocity[0];
-      this.position[0] = windowWidth - this.size[0];
-      collidedWithWall = true;
-    }
-    if (this.position[1] <= 0) {
-      this.velocity[1] = -this.velocity[1];
-      this.position[1] = 0;
-      collidedWithWall = true;
-    }
-    return { position: this.position, collidedWithWall: collidedWithWall };
   }
 
   reset(

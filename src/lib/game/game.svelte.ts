@@ -26,13 +26,18 @@ type NoCollision = {
   isColliding: false;
 };
 
-type Collision = {
+type AABBCollision = {
   isColliding: true;
   direction: Direction;
   difference: vec2;
 };
 
-type CollisionResult = NoCollision | Collision;
+type WallCollision = {
+  isColliding: true;
+};
+
+type AABBCollisionCheckResult = AABBCollision | NoCollision;
+type WallCollisionCheckResult = WallCollision | NoCollision;
 
 const NUMBER_OF_LEVELS = 4;
 
@@ -224,7 +229,7 @@ export class BreakoutGame {
   }
 
   /** @tutorial https://learnopengl.com/In-Practice/2D-Game/Collisions/Collision-detection */
-  #checkCollisionAABBAndCircle(ball: Ball, obstacle: Block | Paddle): CollisionResult {
+  #checkCollisionAABBAndCircle(ball: Ball, obstacle: Block | Paddle): AABBCollisionCheckResult {
     const ballCenter = vec2.fromValues(
       ball.position[0] + ball.radius,
       ball.position[1] + ball.radius
@@ -277,11 +282,9 @@ export class BreakoutGame {
     return this.#getCurrentLevel().blocks;
   }
 
-  #handleCollisionWithBlock(ball: Ball, block: Block, collision: Collision) {
+  #handleCollisionWithBlock(ball: Ball, block: Block, collision: AABBCollision) {
     if (!block.isSolid) {
       block.destroyed = true;
-    } else {
-      this.#postProcessor?.activateEffect({ effectName: "shake", collisionWith: "wall" });
     }
     const direction = collision.direction;
     if (direction === "LEFT" || direction === "RIGHT") {
@@ -303,7 +306,7 @@ export class BreakoutGame {
     }
   }
 
-  #handleCollisionWithPaddle(ball: Ball, paddle: Paddle, collision: Collision) {
+  #handleCollisionWithPaddle(ball: Ball, paddle: Paddle, collision: AABBCollision) {
     const direction = collision.direction;
     if (direction === "LEFT" || direction === "RIGHT") {
       ball.velocity[0] = -ball.velocity[0];
@@ -333,15 +336,45 @@ export class BreakoutGame {
     vec2.scale(ball.velocity, ball.velocity, oldSpeed);
   }
 
+  #checkAndHandleWallCollision(
+    ball: Ball,
+    windowSize: BreakoutGameDimensions
+  ): WallCollisionCheckResult {
+    if (ball.position[0] <= 0) {
+      ball.velocity[0] *= -1;
+      ball.position[0] = 0;
+      return { isColliding: true };
+    } else if (ball.position[0] + ball.size[0] >= windowSize.x) {
+      ball.velocity[0] *= -1;
+      ball.position[0] = windowSize.x - ball.size[0];
+      return { isColliding: true };
+    }
+    if (ball.position[1] <= 0) {
+      ball.velocity[1] *= -1;
+      ball.position[1] = 0;
+      return { isColliding: true };
+    }
+    return { isColliding: false };
+  }
+
   #checkAndHandleCollisions() {
     if (!this.#ball) return;
     if (this.#ball.stuck) return;
     if (!this.#paddle) return;
+    if (!this.windowSize) return;
+
+    const wallCollisionResult = this.#checkAndHandleWallCollision(this.#ball, this.windowSize);
+    if (wallCollisionResult.isColliding) {
+      this.#postProcessor?.activateEffect({ effectName: "shake", collisionWith: "wall" });
+    }
 
     for (const block of this.#getCurrentLevelBlocks()) {
       if (block.destroyed) continue;
       const blockCollisionResult = this.#checkCollisionAABBAndCircle(this.#ball, block);
       if (!blockCollisionResult.isColliding) continue;
+      if (block.isSolid) {
+        this.#postProcessor?.activateEffect({ effectName: "shake", collisionWith: "wall" });
+      }
       this.#handleCollisionWithBlock(this.#ball, block, blockCollisionResult);
     }
 
@@ -358,17 +391,14 @@ export class BreakoutGame {
     if (!this.#particleGenerator) return;
 
     if (this.#ball.stuck) {
-      const ballPosition = this.#ballPositionOnPaddleWhenStuck(
+      const ballPositionWhenStuck = this.#ballPositionOnPaddleWhenStuck(
         this.#paddle.position,
         this.#paddle.size[0],
         this.#ball.radius
       );
-      this.#ball.move(dt, this.windowSize.x, ballPosition);
+      this.#ball.move(dt, ballPositionWhenStuck);
     } else {
-      const { collidedWithWall: collidedWithWindowBorder } = this.#ball.move(dt, this.windowSize.x);
-      if (collidedWithWindowBorder) {
-        this.#postProcessor?.activateEffect({ effectName: "shake", collisionWith: "wall" });
-      }
+      this.#ball.move(dt);
       this.#checkAndHandleCollisions();
       if (this.#ball.position[1] >= this.windowSize.y) {
         this.resetCurrentLevel();
