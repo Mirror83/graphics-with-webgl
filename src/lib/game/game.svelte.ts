@@ -76,7 +76,7 @@ export class BreakoutGame {
         fragment: "shaders/sprite.frag"
       }),
       this.resourceManager.loadTexture(gl, "ball", "textures/ball.png"),
-      this.resourceManager.loadTexture(gl, "block_solid", "textures/block_solid.png"),
+      this.resourceManager.loadTexture(gl, "block-solid", "textures/block-solid.png"),
       this.resourceManager.loadTexture(gl, "block", "textures/block.png"),
       this.resourceManager.loadTexture(gl, "background", "textures/background.jpg"),
       this.resourceManager.loadTexture(gl, "paddle", "textures/paddle.png"),
