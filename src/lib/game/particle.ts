@@ -1,5 +1,6 @@
 import { vec2, vec4 } from "gl-matrix";
 import { BreakoutGameObject } from "~/lib/game/game-object";
+import { Random } from "~/lib/game/random";
 import type { Shader } from "~/lib/shaders";
 import type { Texture2D } from "~/lib/textures";
 
@@ -14,13 +15,6 @@ const NUMBER_OF_PARTICLES = 500;
 const NUMBER_OF_NEW_PARTICLES_PER_FRAME = 5;
 
 const EPSILON = 1e-5;
-
-/**
- * Returns a random number between `min` and `max` (inclusive of min, exclusive of max).
- * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/random#getting_a_random_number_between_two_values */
-function randRange(min: number, max: number) {
-  return Math.random() * (max - min) + min;
-}
 
 /** A container for rendering a large number of particles
  *  by repeatedly spawning and updating particles, and killing them
@@ -47,7 +41,6 @@ export class ParticleGenerator {
       colour: vec4.fromValues(1.0, 1.0, 1.0, 1.0),
       lifetime: 0
     }));
-    console.debug("particles:", this.#particles);
   }
 
   #initVertexArrayBuffer(gl: WebGL2RenderingContext) {
@@ -114,13 +107,18 @@ export class ParticleGenerator {
     gameObject: BreakoutGameObject,
     offset: vec2 = vec2.fromValues(0.0, 0.0)
   ) {
-    const randomPositionOffset = randRange(-5.0, 5.0);
-    const randomColour = randRange(0.5, 1.0);
+    const randomPositionOffset = Random.range(-5.0, 5.0);
+    const randomColourChannelVal = Random.range(0.5, 1.0);
     const newPosition = vec2.add(vec2.create(), gameObject.position, offset);
     vec2.add(newPosition, newPosition, vec2.fromValues(randomPositionOffset, randomPositionOffset));
     particle.position = newPosition;
     particle.lifetime = 1.0;
-    particle.colour = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
+    particle.colour = vec4.fromValues(
+      randomColourChannelVal,
+      randomColourChannelVal,
+      randomColourChannelVal,
+      1.0
+    );
     vec2.scale(particle.velocity, particle.velocity, 0.1);
   }
 
