@@ -2,7 +2,7 @@ import { vec2, vec4 } from "gl-matrix";
 import type { SpriteRenderer } from "~/lib/game/sprite";
 import type { Texture2D } from "~/lib/textures";
 
-type BreakoutGameObjectProperties = {
+export type BreakoutGameObjectProperties = {
   position: vec2;
   size: vec2;
   sprite: Texture2D;
