@@ -1,7 +1,26 @@
 import { Shader, type ShaderSources } from "~/lib/shaders";
 import { Texture2D } from "~/lib/textures";
 
-type TextureName = "ball" | "block-solid" | "block" | "background" | "paddle" | "particle";
+export const modifierTextureNames = [
+  "modifier-ball-speed-increase",
+  "modifier-chaos",
+  "modifier-confuse",
+  "modifier-paddle-size-increase",
+  "modifier-pass-through",
+  "modifier-sticky-paddle"
+] as const;
+
+type ModifierTextureName = (typeof modifierTextureNames)[number];
+
+type TextureName =
+  | "ball"
+  | "block-solid"
+  | "block"
+  | "background"
+  | "paddle"
+  | "particle"
+  | ModifierTextureName;
+
 type ShaderName = "sprite" | "particle" | "post-processing";
 
 type Fetch = typeof fetch;

@@ -92,7 +92,7 @@ export class BreakoutGameLevel {
     let sprite: Texture2D | null;
     switch (kind) {
       case BreakoutGameLevelBlockKind.SOLID:
-        sprite = resourceManager.getTexture("block_solid");
+        sprite = resourceManager.getTexture("block-solid");
         break;
       default:
         sprite = resourceManager.getTexture("block");
