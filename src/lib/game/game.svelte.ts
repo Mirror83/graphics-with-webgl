@@ -3,9 +3,16 @@ import { on } from "svelte/events";
 import { vectorDirection, type Direction } from "~/lib/game/direction";
 import { Ball, Block, Paddle } from "~/lib/game/game-object";
 import { BreakoutGameLevel } from "~/lib/game/level";
+import {
+  BreakoutModifier,
+  BreakoutModifierPill,
+  modifierSpawnPossibilities,
+  modifierSpawnWeights
+} from "~/lib/game/modifier";
 import { ParticleGenerator } from "~/lib/game/particle";
 import { BreakoutPostProcessor } from "~/lib/game/post-processor";
-import { ResourceManager } from "~/lib/game/resource-manager";
+import { Random } from "~/lib/game/random";
+import { modifierTextureNames, ResourceManager } from "~/lib/game/resource-manager";
 import { SpriteRenderer } from "~/lib/game/sprite";
 import { updateRenderTime, type RenderTime } from "~/lib/render";
 
@@ -56,6 +63,7 @@ export class BreakoutGame {
   #requestAnimationFrameId: number | null = null;
   #particleGenerator: ParticleGenerator | null = null;
   #postProcessor: BreakoutPostProcessor | null = null;
+  #spawnedModifiers: BreakoutModifier[] = [];
 
   setWindowSize(size: BreakoutGameDimensions) {
     this.windowSize = size;
@@ -90,7 +98,10 @@ export class BreakoutGame {
       this.resourceManager.loadShader(gl, "post-processing", {
         vertex: "shaders/post-processing.vert",
         fragment: "shaders/post-processing.frag"
-      })
+      }),
+      ...modifierTextureNames.map((name) =>
+        this.resourceManager!.loadTexture(gl, name, `textures/${name}.png`)
+      )
     ]);
     // These define the size of the near and far planes of the orthographic projection
     // (their top-left and bottom-right corners)
@@ -273,6 +284,7 @@ export class BreakoutGame {
       this.#ball.radius
     );
     this.#ball.reset(ballPosition);
+    this.#clearModifiers();
     this.#particleGenerator.killAllParticles();
     this.#postProcessor?.resetEffects();
     currentLevel.reset();
@@ -374,6 +386,8 @@ export class BreakoutGame {
       if (!blockCollisionResult.isColliding) continue;
       if (block.isSolid) {
         this.#postProcessor?.activateEffect({ effectName: "shake", collisionWith: "wall" });
+      } else {
+        this.#maybeSpawnModifier(vec2.fromValues(block.position[0], block.position[1]));
       }
       this.#handleCollisionWithBlock(this.#ball, block, blockCollisionResult);
     }
@@ -381,6 +395,44 @@ export class BreakoutGame {
     const paddleCollisionResult = this.#checkCollisionAABBAndCircle(this.#ball, this.#paddle);
     if (!paddleCollisionResult.isColliding) return;
     this.#handleCollisionWithPaddle(this.#ball, this.#paddle, paddleCollisionResult);
+  }
+
+  #maybeSpawnModifier(position: vec2) {
+    if (!this.resourceManager) return;
+    const modifierToSpawn = Random.choice(modifierSpawnPossibilities, modifierSpawnWeights);
+    if (!modifierToSpawn) return;
+    const modifier = new BreakoutModifier({ name: modifierToSpawn });
+    modifier.spawnModifierPill(
+      position,
+      BreakoutModifierPill.getDefaultSprite(modifierToSpawn, this.resourceManager)
+    );
+
+    this.#spawnedModifiers.push(modifier);
+  }
+
+  #updateSpawnedModifiers(dt: number) {
+    if (!this.windowSize) return;
+
+    for (const modifier of this.#spawnedModifiers) {
+      if (modifier.pill) {
+        modifier.pill.move(dt);
+        if (modifier.pill.position[1] >= this.windowSize.y) {
+          modifier.destroyModifierPill();
+        }
+      }
+    }
+  }
+
+  #drawSpawnedModifiers(gl: WebGL2RenderingContext, spriteRenderer: SpriteRenderer) {
+    if (!this.#spriteRenderer) return;
+
+    for (const modifier of this.#spawnedModifiers) {
+      modifier.drawModifierPill(gl, spriteRenderer);
+    }
+  }
+
+  #clearModifiers() {
+    this.#spawnedModifiers = [];
   }
 
   update(dt: number) {
@@ -400,6 +452,7 @@ export class BreakoutGame {
     } else {
       this.#ball.move(dt);
       this.#checkAndHandleCollisions();
+      this.#updateSpawnedModifiers(dt);
       if (this.#ball.position[1] >= this.windowSize.y) {
         this.resetCurrentLevel();
       }
@@ -439,6 +492,7 @@ export class BreakoutGame {
     this.#getCurrentLevel().draw(gl, this.#spriteRenderer);
     this.#paddle.draw(gl, this.#spriteRenderer);
     this.#ball.draw(gl, this.#spriteRenderer);
+    this.#drawSpawnedModifiers(gl, this.#spriteRenderer);
     this.#particleGenerator.drawParticles(gl);
 
     this.#postProcessor?.endRenderToScreenTexture(gl);
@@ -472,6 +526,7 @@ export class BreakoutGame {
     this.resourceManager?.clearResources(gl);
     this.#inputHandlerDisposers.forEach((dispose) => dispose());
     this.#inputHandlerDisposers = [];
+    this.#clearModifiers();
     if (this.#requestAnimationFrameId !== null) {
       cancelAnimationFrame(this.#requestAnimationFrameId);
       this.#requestAnimationFrameId = null;
