@@ -48,3 +48,14 @@ export function checkCollisionAABBAndCircle(circle: Circle, box: AABB): AABBColl
   const direction = vectorDirection(difference);
   return { isColliding, direction, difference };
 }
+
+/** @tutorial https://learnopengl.com/In-Practice/2D-Game/Collisions/Collision-detection */
+export function checkCollisionAABBs(box1: AABB, box2: AABB): boolean {
+  const collisionX =
+    box1.position[0] + box1.size[0] >= box2.position[0] &&
+    box2.position[0] + box2.size[0] >= box1.position[0];
+  const collisionY =
+    box1.position[1] + box1.size[1] >= box2.position[1] &&
+    box2.position[1] + box2.size[1] >= box1.position[1];
+  return collisionX && collisionY;
+}

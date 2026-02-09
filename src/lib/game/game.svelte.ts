@@ -1,6 +1,10 @@
 import { mat4, vec2, vec4 } from "gl-matrix";
 import { on } from "svelte/events";
-import { checkCollisionAABBAndCircle, type AABBCollision } from "~/lib/game/aabb-collision";
+import {
+  checkCollisionAABBAndCircle,
+  checkCollisionAABBs,
+  type AABBCollision
+} from "~/lib/game/aabb-collision";
 import { Ball, Block, Paddle } from "~/lib/game/game-object";
 import { BreakoutGameLevel } from "~/lib/game/level";
 import {
@@ -347,8 +351,11 @@ export class BreakoutGame {
     }
 
     const paddleCollisionResult = checkCollisionAABBAndCircle(this.#ball, this.#paddle);
-    if (!paddleCollisionResult.isColliding) return;
-    this.#handleCollisionWithPaddle(this.#ball, this.#paddle, paddleCollisionResult);
+    if (paddleCollisionResult.isColliding) {
+      this.#handleCollisionWithPaddle(this.#ball, this.#paddle, paddleCollisionResult);
+    }
+
+    this.#checkAndHandleModifierCollisions();
   }
 
   #maybeSpawnModifier(position: vec2) {
@@ -364,6 +371,33 @@ export class BreakoutGame {
     this.#spawnedModifiers.push(modifier);
   }
 
+  #checkAndHandleModifierCollisions() {
+    if (!this.#paddle) return;
+    for (const modifier of this.#spawnedModifiers) {
+      if (!modifier.pill) continue;
+      const modifierCollisionResult = checkCollisionAABBs(modifier.pill, this.#paddle);
+      if (!modifierCollisionResult) continue;
+      this.#activateModifier(modifier);
+      modifier.destroyModifierPill();
+    }
+  }
+
+  #activateModifier(modifier: BreakoutModifier) {
+    modifier.isActive = true;
+    switch (modifier.name) {
+      case "chaos":
+        if (!this.#postProcessor) break;
+        this.#postProcessor.effects.chaos.isActive = true;
+        this.#postProcessor.effects.chaos.durationInSeconds =
+          BreakoutModifier.getDefaultDuration(modifier.name) ?? 0;
+        this.#postProcessor.activateEffect({ effectName: "chaos" });
+        break;
+      default:
+        console.debug("pseudo-activate modifier:", modifier.name);
+        break;
+    }
+  }
+
   #updateSpawnedModifiers(dt: number) {
     if (!this.windowSize) return;
 
@@ -372,6 +406,31 @@ export class BreakoutGame {
         modifier.pill.move(dt);
         if (modifier.pill.position[1] >= this.windowSize.y) {
           modifier.destroyModifierPill();
+        }
+      }
+      if (modifier.isActive && modifier.duration) {
+        if (!this.#postProcessor) break;
+        modifier.duration -= dt;
+        switch (modifier.name) {
+          case "chaos":
+            this.#postProcessor.effects[modifier.name].durationInSeconds = modifier.duration;
+            break;
+          default:
+            break;
+        }
+        if (modifier.duration <= Number.EPSILON) {
+          modifier.isActive = false;
+          switch (modifier.name) {
+            case "chaos":
+              if (!this.#postProcessor) break;
+              this.#postProcessor.effects.chaos.isActive = false;
+              this.#postProcessor.effects.chaos.durationInSeconds = 0;
+              break;
+            default:
+              console.debug("pseudo-deactivate modifier:", modifier.name);
+              break;
+          }
+        } else {
         }
       }
     }
