@@ -1,6 +1,6 @@
 import { mat4, vec2, vec4 } from "gl-matrix";
 import { on } from "svelte/events";
-import { vectorDirection, type Direction } from "~/lib/game/direction";
+import { checkCollisionAABBAndCircle, type AABBCollision } from "~/lib/game/aabb-collision";
 import { Ball, Block, Paddle } from "~/lib/game/game-object";
 import { BreakoutGameLevel } from "~/lib/game/level";
 import {
@@ -28,23 +28,6 @@ export type BreakoutGameDimensions = {
   x: number;
   y: number;
 };
-
-type NoCollision = {
-  isColliding: false;
-};
-
-type AABBCollision = {
-  isColliding: true;
-  direction: Direction;
-  difference: vec2;
-};
-
-type WallCollision = {
-  isColliding: true;
-};
-
-type AABBCollisionCheckResult = AABBCollision | NoCollision;
-type WallCollisionCheckResult = WallCollision | NoCollision;
 
 const NUMBER_OF_LEVELS = 4;
 
@@ -239,32 +222,6 @@ export class BreakoutGame {
     });
   }
 
-  /** @tutorial https://learnopengl.com/In-Practice/2D-Game/Collisions/Collision-detection */
-  #checkCollisionAABBAndCircle(ball: Ball, obstacle: Block | Paddle): AABBCollisionCheckResult {
-    const ballCenter = vec2.fromValues(
-      ball.position[0] + ball.radius,
-      ball.position[1] + ball.radius
-    );
-    const obstacleHalfExtents = vec2.fromValues(obstacle.size[0] / 2, obstacle.size[1] / 2);
-    const obstacleCenter = vec2.fromValues(
-      obstacle.position[0] + obstacleHalfExtents[0],
-      obstacle.position[1] + obstacleHalfExtents[1]
-    );
-    let difference = vec2.subtract(vec2.create(), ballCenter, obstacleCenter);
-    const clamped = vec2.fromValues(
-      Math.max(-obstacleHalfExtents[0], Math.min(difference[0], obstacleHalfExtents[0])),
-      Math.max(-obstacleHalfExtents[1], Math.min(difference[1], obstacleHalfExtents[1]))
-    );
-    const closest = vec2.add(vec2.create(), obstacleCenter, clamped);
-    difference = vec2.subtract(vec2.create(), closest, ballCenter);
-    const isColliding = vec2.length(difference) < ball.radius;
-    if (!isColliding) {
-      return { isColliding };
-    }
-    const direction = vectorDirection(difference);
-    return { isColliding, direction, difference };
-  }
-
   #getCurrentLevel() {
     return this.#levels[this.#currentLevelIndex];
   }
@@ -348,25 +305,22 @@ export class BreakoutGame {
     vec2.scale(ball.velocity, ball.velocity, oldSpeed);
   }
 
-  #checkAndHandleWallCollision(
-    ball: Ball,
-    windowSize: BreakoutGameDimensions
-  ): WallCollisionCheckResult {
+  #checkAndHandleWallCollision(ball: Ball, windowSize: BreakoutGameDimensions): boolean {
     if (ball.position[0] <= 0) {
       ball.velocity[0] *= -1;
       ball.position[0] = 0;
-      return { isColliding: true };
+      return true;
     } else if (ball.position[0] + ball.size[0] >= windowSize.x) {
       ball.velocity[0] *= -1;
       ball.position[0] = windowSize.x - ball.size[0];
-      return { isColliding: true };
+      return true;
     }
     if (ball.position[1] <= 0) {
       ball.velocity[1] *= -1;
       ball.position[1] = 0;
-      return { isColliding: true };
+      return true;
     }
-    return { isColliding: false };
+    return false;
   }
 
   #checkAndHandleCollisions() {
@@ -375,14 +329,14 @@ export class BreakoutGame {
     if (!this.#paddle) return;
     if (!this.windowSize) return;
 
-    const wallCollisionResult = this.#checkAndHandleWallCollision(this.#ball, this.windowSize);
-    if (wallCollisionResult.isColliding) {
+    const isCollisionWithWall = this.#checkAndHandleWallCollision(this.#ball, this.windowSize);
+    if (isCollisionWithWall) {
       this.#postProcessor?.activateEffect({ effectName: "shake", collisionWith: "wall" });
     }
 
     for (const block of this.#getCurrentLevelBlocks()) {
       if (block.destroyed) continue;
-      const blockCollisionResult = this.#checkCollisionAABBAndCircle(this.#ball, block);
+      const blockCollisionResult = checkCollisionAABBAndCircle(this.#ball, block);
       if (!blockCollisionResult.isColliding) continue;
       if (block.isSolid) {
         this.#postProcessor?.activateEffect({ effectName: "shake", collisionWith: "wall" });
@@ -392,7 +346,7 @@ export class BreakoutGame {
       this.#handleCollisionWithBlock(this.#ball, block, blockCollisionResult);
     }
 
-    const paddleCollisionResult = this.#checkCollisionAABBAndCircle(this.#ball, this.#paddle);
+    const paddleCollisionResult = checkCollisionAABBAndCircle(this.#ball, this.#paddle);
     if (!paddleCollisionResult.isColliding) return;
     this.#handleCollisionWithPaddle(this.#ball, this.#paddle, paddleCollisionResult);
   }
