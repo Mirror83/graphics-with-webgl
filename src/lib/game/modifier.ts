@@ -31,6 +31,7 @@ export const modifierSpawnWeights = modifierSpawnPossibilities.map((name) => {
     case "paddle-size-increase":
       return 0;
     case "confuse":
+      return 1;
     case "chaos":
       return 1;
     case null:

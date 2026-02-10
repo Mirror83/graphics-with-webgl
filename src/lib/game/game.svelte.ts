@@ -386,11 +386,12 @@ export class BreakoutGame {
     modifier.isActive = true;
     switch (modifier.name) {
       case "chaos":
+      case "confuse":
         if (!this.#postProcessor) break;
-        this.#postProcessor.effects.chaos.isActive = true;
-        this.#postProcessor.effects.chaos.durationInSeconds =
+        this.#postProcessor.effects[modifier.name].isActive = true;
+        this.#postProcessor.effects[modifier.name].durationInSeconds =
           BreakoutModifier.getDefaultDuration(modifier.name) ?? 0;
-        this.#postProcessor.activateEffect({ effectName: "chaos" });
+        this.#postProcessor.activateEffect({ effectName: modifier.name });
         break;
       default:
         console.debug("pseudo-activate modifier:", modifier.name);
@@ -413,6 +414,7 @@ export class BreakoutGame {
         modifier.duration -= dt;
         switch (modifier.name) {
           case "chaos":
+          case "confuse":
             this.#postProcessor.effects[modifier.name].durationInSeconds = modifier.duration;
             break;
           default:
@@ -422,9 +424,10 @@ export class BreakoutGame {
           modifier.isActive = false;
           switch (modifier.name) {
             case "chaos":
+            case "confuse":
               if (!this.#postProcessor) break;
-              this.#postProcessor.effects.chaos.isActive = false;
-              this.#postProcessor.effects.chaos.durationInSeconds = 0;
+              this.#postProcessor.effects[modifier.name].isActive = false;
+              this.#postProcessor.effects[modifier.name].durationInSeconds = 0;
               break;
             default:
               console.debug("pseudo-deactivate modifier:", modifier.name);
