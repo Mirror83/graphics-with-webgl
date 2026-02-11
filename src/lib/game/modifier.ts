@@ -26,14 +26,17 @@ export const modifierSpawnPossibilities = [...breakoutModifierNames, null] as co
 export const modifierSpawnWeights = modifierSpawnPossibilities.map((name) => {
   switch (name) {
     case "ball-speed-increase":
+      return 1;
     case "sticky-paddle":
-    case "pass-through":
-    case "paddle-size-increase":
       return 0;
+    case "pass-through":
+      return 0;
+    case "paddle-size-increase":
+      return 1;
     case "confuse":
-      return 1;
+      return 0;
     case "chaos":
-      return 1;
+      return 0;
     case null:
       return 0;
     default:

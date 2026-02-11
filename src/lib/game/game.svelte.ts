@@ -237,6 +237,7 @@ export class BreakoutGame {
     if (!this.#particleGenerator) return;
 
     const currentLevel = this.#getCurrentLevel();
+    this.#paddle.size = vec2.fromValues(Paddle.INITIAL_SIZE[0], Paddle.INITIAL_SIZE[1]);
     this.#paddle.position = this.#getInitialPaddlePosition(this.windowSize);
     this.#ball.stuck = true;
     const ballPosition = this.#ballPositionOnPaddleWhenStuck(
@@ -390,9 +391,13 @@ export class BreakoutGame {
       switch (modifier.name) {
         case "ball-speed-increase":
           // Increase ball velocity
+          if (!this.#ball) break;
+          vec2.scale(this.#ball.velocity, this.#ball.velocity, 1.2);
           break;
         case "paddle-size-increase":
+          if (!this.#paddle) break;
           // Increase paddle size
+          this.#paddle.size[0] += 50.0;
           break;
         default:
           break;

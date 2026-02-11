@@ -62,8 +62,10 @@ export class Paddle extends BreakoutGameObject {
   constructor(properties: PaddleProperties) {
     super({
       ...properties,
-      size: properties.size ?? Paddle.INITIAL_SIZE,
-      velocity: properties.velocity ?? Paddle.INITIAL_VELOCITY
+      size: properties.size ?? vec2.fromValues(Paddle.INITIAL_SIZE[0], Paddle.INITIAL_SIZE[1]),
+      velocity:
+        properties.velocity ??
+        vec2.fromValues(Paddle.INITIAL_VELOCITY[0], Paddle.INITIAL_VELOCITY[1])
     });
   }
 
