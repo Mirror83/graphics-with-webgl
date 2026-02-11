@@ -425,32 +425,28 @@ export class BreakoutGame {
         if (modifier.pill.position[1] >= this.windowSize.y) {
           modifier.destroyModifierPill();
         }
+        // Modifier will never be activated here, so it is safe to continue
+        // on to the next modifier
+        continue;
       }
-      if (modifier.isActive && modifier.duration) {
-        if (!this.#postProcessor) break;
-        modifier.duration -= dt;
-        switch (modifier.name) {
-          case "chaos":
-          case "confuse":
-            this.#postProcessor.effects[modifier.name].durationInSeconds = modifier.duration;
-            break;
-          default:
-            break;
-        }
-        if (modifier.duration <= Number.EPSILON) {
-          modifier.isActive = false;
-          switch (modifier.name) {
-            case "chaos":
-            case "confuse":
-              if (!this.#postProcessor) break;
-              this.#postProcessor.effects[modifier.name].isActive = false;
-              this.#postProcessor.effects[modifier.name].durationInSeconds = 0;
-              break;
-            default:
-              console.debug("pseudo-deactivate modifier:", modifier.name);
-              break;
-          }
-        }
+
+      if (!(modifier.isActive && modifier.duration)) continue;
+
+      // Update numeric duration for active modifiers
+      modifier.duration -= dt;
+      if (modifier.duration > Number.EPSILON) continue;
+
+      // Deactivate modifier once duration is close enough to zero
+      modifier.isActive = false;
+      switch (modifier.name) {
+        case "chaos":
+        case "confuse":
+          if (!this.#postProcessor) break;
+          this.#postProcessor.resetEffect(modifier.name);
+          break;
+        default:
+          console.debug("pseudo-deactivate modifier:", modifier.name);
+          break;
       }
     }
   }
