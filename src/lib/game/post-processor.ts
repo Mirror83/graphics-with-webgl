@@ -28,11 +28,13 @@ type ShakeActivationParams = {
 
 type ChaosActivationParams = {
   effectName: "chaos";
+  durationInSeconds: number;
   strength?: number;
 };
 
 type ConfuseActivationParams = {
   effectName: "confuse";
+  durationInSeconds: number;
 };
 
 type BreakoutPostProcessingEffectActivationParams =
@@ -62,12 +64,12 @@ export class BreakoutPostProcessor {
     },
     chaos: {
       isActive: false,
-      durationInSeconds: 10.0,
+      durationInSeconds: 0.0,
       strength: 0.01
     },
     confuse: {
       isActive: false,
-      durationInSeconds: 20
+      durationInSeconds: 0
     }
   };
 
@@ -260,7 +262,7 @@ export class BreakoutPostProcessor {
         this.#activateChaos(activationParams);
         break;
       case "confuse":
-        this.#activateConfuse();
+        this.#activateConfuse(activationParams);
         break;
       default:
         throw new Error(`Unknown effect activation params: ${activationParams}`);
@@ -298,10 +300,12 @@ export class BreakoutPostProcessor {
 
   #activateChaos(activationParams: ChaosActivationParams) {
     this.effects.chaos.isActive = true;
+    this.effects.chaos.durationInSeconds = activationParams.durationInSeconds;
     this.effects.chaos.strength = activationParams.strength ?? 0.02;
   }
 
-  #activateConfuse() {
+  #activateConfuse(activationParams: ConfuseActivationParams) {
     this.effects.confuse.isActive = true;
+    this.effects.confuse.durationInSeconds = activationParams.durationInSeconds;
   }
 }

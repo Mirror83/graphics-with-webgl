@@ -384,14 +384,31 @@ export class BreakoutGame {
 
   #activateModifier(modifier: BreakoutModifier) {
     modifier.isActive = true;
+    const duration = BreakoutModifier.getDefaultDuration(modifier.name);
+    if (duration === null) {
+      modifier.duration = null;
+      switch (modifier.name) {
+        case "ball-speed-increase":
+          // Increase ball velocity
+          break;
+        case "paddle-size-increase":
+          // Increase paddle size
+          break;
+        default:
+          break;
+      }
+
+      return;
+    }
+
     switch (modifier.name) {
       case "chaos":
       case "confuse":
         if (!this.#postProcessor) break;
-        this.#postProcessor.effects[modifier.name].isActive = true;
-        this.#postProcessor.effects[modifier.name].durationInSeconds =
-          BreakoutModifier.getDefaultDuration(modifier.name) ?? 0;
-        this.#postProcessor.activateEffect({ effectName: modifier.name });
+        this.#postProcessor.activateEffect({
+          effectName: modifier.name,
+          durationInSeconds: duration
+        });
         break;
       default:
         console.debug("pseudo-activate modifier:", modifier.name);
@@ -433,7 +450,6 @@ export class BreakoutGame {
               console.debug("pseudo-deactivate modifier:", modifier.name);
               break;
           }
-        } else {
         }
       }
     }
