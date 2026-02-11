@@ -2,6 +2,8 @@ import type { BreakoutGameDimensions } from "~/lib/game/game.svelte";
 import type { Shader } from "~/lib/shaders";
 import { Texture2D } from "~/lib/textures";
 
+type BreakoutPostProcessingEffectName = "shake" | "chaos" | "confuse";
+
 interface BreakoutPostProcessingEffect {
   isActive: boolean;
   durationInSeconds: number;
@@ -249,7 +251,7 @@ export class BreakoutPostProcessor {
     gl.bindVertexArray(null);
   }
 
-  effectIsActive(effectName: keyof BreakoutPostProcessingEffects): boolean {
+  effectIsActive(effectName: BreakoutPostProcessingEffectName): boolean {
     return this.effects[effectName].isActive;
   }
 
@@ -281,14 +283,14 @@ export class BreakoutPostProcessor {
     });
   }
 
-  resetEffect(effectName: keyof BreakoutPostProcessingEffects) {
+  resetEffect(effectName: BreakoutPostProcessingEffectName) {
     this.effects[effectName].isActive = false;
     this.effects[effectName].durationInSeconds = 0;
   }
 
   resetEffects() {
     Object.keys(this.effects).forEach((effectName) => {
-      this.resetEffect(effectName as keyof BreakoutPostProcessingEffects);
+      this.resetEffect(effectName as BreakoutPostProcessingEffectName);
     });
   }
 
