@@ -268,34 +268,25 @@ export class BreakoutGame {
     }
   }
 
-  #handleCollisionWithPaddle(ball: Ball, paddle: Paddle, collision: AABBCollision) {
-    const direction = collision.direction;
-    if (direction === "LEFT" || direction === "RIGHT") {
-      ball.velocity[0] = -ball.velocity[0];
-      const penetration = ball.radius - Math.abs(collision.difference[0]);
-      if (direction === "LEFT") {
-        ball.position[0] += penetration;
-      } else {
-        ball.position[0] -= penetration;
-      }
-    } else {
-      ball.velocity[1] = -ball.velocity[1];
-      const penetration = ball.radius - Math.abs(collision.difference[1]);
-      if (direction === "UP") {
-        ball.position[1] -= penetration;
-      } else {
-        ball.position[1] += penetration;
-      }
-    }
+  /** Changes the ball's velocity based on where it hit the paddle */
+  #ballAndPaddleCollisionResponse(ball: Ball, paddle: Paddle) {
     const paddleCenterX = paddle.position[0] + paddle.size[0] / 2;
     const distanceFromPaddleCenter = ball.position[0] + ball.radius - paddleCenterX;
     const percentage = distanceFromPaddleCenter / (paddle.size[0] / 2);
+
     const strength = 2.0;
-    const oldSpeed = vec2.length(ball.velocity);
-    ball.velocity[0] = Paddle.INITIAL_VELOCITY[0] * percentage * strength;
-    ball.velocity[1] = -1.0 * Math.abs(ball.velocity[1]);
+    const oldVelocity = vec2.fromValues(ball.velocity[0], ball.velocity[1]);
+    ball.velocity[0] = Ball.INITIAL_VELOCITY[0] * percentage * strength;
+
     vec2.normalize(ball.velocity, ball.velocity);
-    vec2.scale(ball.velocity, ball.velocity, oldSpeed);
+    vec2.scale(ball.velocity, ball.velocity, vec2.length(oldVelocity));
+
+    ball.velocity[1] = -1.0 * Math.abs(ball.velocity[1]);
+  }
+
+  #handleCollisionWithPaddle(ball: Ball, paddle: Paddle) {
+    this.#ballAndPaddleCollisionResponse(ball, paddle);
+    ball.stuck = paddle.sticky;
   }
 
   #checkAndHandleWallCollision(ball: Ball, windowSize: BreakoutGameDimensions): boolean {
@@ -336,8 +327,7 @@ export class BreakoutGame {
 
       const paddleCollisionResult = checkCollisionAABBAndCircle(this.#ball, this.#paddle);
       if (paddleCollisionResult.isColliding) {
-        this.#handleCollisionWithPaddle(this.#ball, this.#paddle, paddleCollisionResult);
-        this.#ball.stuck = this.#paddle.sticky;
+        this.#handleCollisionWithPaddle(this.#ball, this.#paddle);
       }
     }
 
