@@ -296,8 +296,8 @@ export class BreakoutPostProcessor {
 
   #activateShake(activationParams: ShakeActivationParams) {
     this.effects.shake.isActive = true;
-    this.effects.shake.durationInSeconds = activationParams.collisionWith === "wall" ? 0.05 : 0.15;
-    this.effects.shake.strength = activationParams.collisionWith === "wall" ? 0.01 : 0.15;
+    this.effects.shake.durationInSeconds = activationParams.collisionWith === "wall" ? 0.04 : 0.02;
+    this.effects.shake.strength = activationParams.collisionWith === "wall" ? 0.01 : 0.06;
   }
 
   #activateChaos(activationParams: ChaosActivationParams) {
