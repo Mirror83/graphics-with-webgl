@@ -59,6 +59,8 @@ export class Paddle extends BreakoutGameObject {
   static readonly INITIAL_VELOCITY = vec2.fromValues(800, 0);
   static readonly Y_OFFSET = 10;
 
+  sticky: boolean = false;
+
   constructor(properties: PaddleProperties) {
     super({
       ...properties,

@@ -240,6 +240,7 @@ export class BreakoutGame {
     this.#paddle.size = vec2.fromValues(Paddle.INITIAL_SIZE[0], Paddle.INITIAL_SIZE[1]);
     this.#paddle.position = this.#getInitialPaddlePosition(this.windowSize);
     this.#ball.stuck = true;
+    this.#paddle.colour = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
     const ballPosition = this.#ballPositionOnPaddleWhenStuck(
       this.#paddle.position,
       this.#paddle.size[0],
@@ -330,30 +331,32 @@ export class BreakoutGame {
 
   #checkAndHandleCollisions() {
     if (!this.#ball) return;
-    if (this.#ball.stuck) return;
     if (!this.#paddle) return;
     if (!this.windowSize) return;
 
-    const isCollisionWithWall = this.#checkAndHandleWallCollision(this.#ball, this.windowSize);
-    if (isCollisionWithWall) {
-      this.#postProcessor?.activateEffect({ effectName: "shake", collisionWith: "wall" });
-    }
-
-    for (const block of this.#getCurrentLevelBlocks()) {
-      if (block.destroyed) continue;
-      const blockCollisionResult = checkCollisionAABBAndCircle(this.#ball, block);
-      if (!blockCollisionResult.isColliding) continue;
-      if (block.isSolid) {
+    if (!this.#ball.stuck) {
+      const isCollisionWithWall = this.#checkAndHandleWallCollision(this.#ball, this.windowSize);
+      if (isCollisionWithWall) {
         this.#postProcessor?.activateEffect({ effectName: "shake", collisionWith: "wall" });
-      } else {
-        this.#maybeSpawnModifier(vec2.fromValues(block.position[0], block.position[1]));
       }
-      this.#handleCollisionWithBlock(this.#ball, block, blockCollisionResult);
-    }
 
-    const paddleCollisionResult = checkCollisionAABBAndCircle(this.#ball, this.#paddle);
-    if (paddleCollisionResult.isColliding) {
-      this.#handleCollisionWithPaddle(this.#ball, this.#paddle, paddleCollisionResult);
+      for (const block of this.#getCurrentLevelBlocks()) {
+        if (block.destroyed) continue;
+        const blockCollisionResult = checkCollisionAABBAndCircle(this.#ball, block);
+        if (!blockCollisionResult.isColliding) continue;
+        if (block.isSolid) {
+          this.#postProcessor?.activateEffect({ effectName: "shake", collisionWith: "wall" });
+        } else {
+          this.#maybeSpawnModifier(vec2.fromValues(block.position[0], block.position[1]));
+        }
+        this.#handleCollisionWithBlock(this.#ball, block, blockCollisionResult);
+      }
+
+      const paddleCollisionResult = checkCollisionAABBAndCircle(this.#ball, this.#paddle);
+      if (paddleCollisionResult.isColliding) {
+        this.#handleCollisionWithPaddle(this.#ball, this.#paddle, paddleCollisionResult);
+        this.#ball.stuck = this.#paddle.sticky;
+      }
     }
 
     this.#checkAndHandleModifierCollisions();
@@ -415,6 +418,13 @@ export class BreakoutGame {
           durationInSeconds: duration
         });
         break;
+      case "sticky-paddle":
+        if (!this.#paddle) break;
+        // Make paddle sticky
+        this.#paddle.sticky = true;
+        modifier.duration = duration;
+        this.#paddle.colour = BreakoutModifierPill.getDefaultColour(modifier.name);
+        break;
       default:
         console.debug("pseudo-activate modifier:", modifier.name);
         break;
@@ -448,6 +458,13 @@ export class BreakoutGame {
         case "confuse":
           if (!this.#postProcessor) break;
           this.#postProcessor.resetEffect(modifier.name);
+          break;
+        case "sticky-paddle":
+          if (!this.#paddle) break;
+          if (!this.#ball) break;
+          this.#paddle.sticky = false;
+          this.#ball.stuck = false;
+          this.#paddle.colour = vec4.fromValues(1, 1, 1, 1);
           break;
         default:
           console.debug("pseudo-deactivate modifier:", modifier.name);
@@ -484,18 +501,18 @@ export class BreakoutGame {
       this.#ball.move(dt, ballPositionWhenStuck);
     } else {
       this.#ball.move(dt);
-      this.#checkAndHandleCollisions();
-      this.#updateSpawnedModifiers(dt);
-      if (this.#ball.position[1] >= this.windowSize.y) {
-        this.resetCurrentLevel();
-      }
-      this.#particleGenerator.update(
-        dt,
-        this.#ball,
-        vec2.fromValues(this.#ball.radius / 2, this.#ball.radius / 2)
-      );
-      this.#postProcessor?.updateEffects(dt);
     }
+    this.#checkAndHandleCollisions();
+    this.#updateSpawnedModifiers(dt);
+    if (this.#ball.position[1] >= this.windowSize.y) {
+      this.resetCurrentLevel();
+    }
+    this.#particleGenerator.update(
+      dt,
+      this.#ball,
+      vec2.fromValues(this.#ball.radius / 2, this.#ball.radius / 2)
+    );
+    this.#postProcessor?.updateEffects(dt);
   }
 
   render(gl: WebGL2RenderingContext) {
@@ -523,10 +540,12 @@ export class BreakoutGame {
     this.update(this.#renderTime.deltaTime);
 
     this.#getCurrentLevel().draw(gl, this.#spriteRenderer);
+    if (!this.#ball.stuck) {
+      this.#particleGenerator.drawParticles(gl);
+    }
     this.#paddle.draw(gl, this.#spriteRenderer);
     this.#ball.draw(gl, this.#spriteRenderer);
     this.#drawSpawnedModifiers(gl, this.#spriteRenderer);
-    this.#particleGenerator.drawParticles(gl);
 
     this.#postProcessor?.endRenderToScreenTexture(gl);
     const timeInSeconds = this.#renderTime.previousTime / 1000;
