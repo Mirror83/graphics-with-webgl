@@ -303,7 +303,7 @@ export class BreakoutPostProcessor {
   #activateChaos(activationParams: ChaosActivationParams) {
     this.effects.chaos.isActive = true;
     this.effects.chaos.durationInSeconds = activationParams.durationInSeconds;
-    this.effects.chaos.strength = activationParams.strength ?? 0.02;
+    this.effects.chaos.strength = activationParams.strength ?? 0.15;
   }
 
   #activateConfuse(activationParams: ConfuseActivationParams) {
