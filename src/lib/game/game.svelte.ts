@@ -396,6 +396,8 @@ export class BreakoutGame {
       return;
     }
 
+    modifier.duration = duration;
+
     switch (modifier.name) {
       case "chaos":
       case "confuse":
@@ -409,7 +411,6 @@ export class BreakoutGame {
         if (!this.#paddle) break;
         // Make paddle sticky
         this.#paddle.sticky = true;
-        modifier.duration = duration;
         this.#paddle.colour = BreakoutModifierPill.getDefaultColour(modifier.name);
         break;
       case "pass-through":
@@ -423,7 +424,7 @@ export class BreakoutGame {
   }
 
   #isOtherModifierActive(modifiers: BreakoutModifier[], name: BreakoutModifierName) {
-    return modifiers.some((modifier) => modifier.name === name);
+    return modifiers.some((modifier) => modifier.name === name && modifier.isActive);
   }
 
   #updateSpawnedModifiers(dt: number) {
