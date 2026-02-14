@@ -85,6 +85,7 @@ export class Ball extends BreakoutGameObject {
   static readonly INITIAL_RADIUS = 12.5;
   static readonly INITIAL_SIZE = vec2.fromValues(Ball.INITIAL_RADIUS * 2, Ball.INITIAL_RADIUS * 2);
   radius: number;
+  passThrough: boolean = false;
   stuck: boolean = true;
 
   constructor(properties: BallProperties) {
@@ -111,5 +112,7 @@ export class Ball extends BreakoutGameObject {
   ) {
     this.position = position;
     this.velocity = velocity;
+    this.colour = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
+    this.passThrough = false;
   }
 }

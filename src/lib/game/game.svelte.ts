@@ -259,7 +259,9 @@ export class BreakoutGame {
   }
 
   #handleCollisionWithBlock(ball: Ball, block: Block, collision: AABBCollision) {
-    aabbAndCircleCollisionResponse(ball, collision);
+    if (!ball.passThrough || block.isSolid) {
+      aabbAndCircleCollisionResponse(ball, collision);
+    }
     if (block.isSolid) {
       this.#postProcessor?.activateEffect({ effectName: "shake", collisionWith: "solid-block" });
     } else {
@@ -396,10 +398,13 @@ export class BreakoutGame {
         this.#paddle.sticky = true;
         modifier.duration = duration;
         this.#paddle.colour = BreakoutModifierPill.getDefaultColour(modifier.name);
+      case "pass-through":
+        if (!this.#ball) break;
+        this.#ball.passThrough = true;
+        this.#ball.colour = vec4.fromValues(0.0, 0.4, 0.0, 1.0);
         break;
       default:
-        console.debug("pseudo-activate modifier:", modifier.name);
-        break;
+        throw new Error(`Unknown modifier: ${modifier.name}`);
     }
   }
 
@@ -438,9 +443,12 @@ export class BreakoutGame {
           this.#ball.stuck = false;
           this.#paddle.colour = vec4.fromValues(1, 1, 1, 1);
           break;
+        case "pass-through":
+          if (!this.#ball) break;
+          this.#ball.passThrough = false;
+          this.#ball.colour = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
         default:
-          console.debug("pseudo-deactivate modifier:", modifier.name);
-          break;
+          throw new Error(`Unknown modifier: ${modifier.name}`);
       }
     }
   }
