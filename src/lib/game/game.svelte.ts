@@ -12,7 +12,8 @@ import {
   BreakoutModifier,
   BreakoutModifierPill,
   modifierSpawnPossibilities,
-  modifierSpawnWeights
+  modifierSpawnWeights,
+  type BreakoutModifierName
 } from "~/lib/game/modifier";
 import { ParticleGenerator } from "~/lib/game/particle";
 import { BreakoutPostProcessor } from "~/lib/game/post-processor";
@@ -240,6 +241,7 @@ export class BreakoutGame {
     const currentLevel = this.#getCurrentLevel();
     this.#paddle.size = vec2.fromValues(Paddle.INITIAL_SIZE[0], Paddle.INITIAL_SIZE[1]);
     this.#paddle.position = this.#getInitialPaddlePosition(this.windowSize);
+    this.#paddle.sticky = false;
     this.#ball.stuck = true;
     this.#paddle.colour = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
     const ballPosition = this.#ballPositionOnPaddleWhenStuck(
@@ -339,7 +341,18 @@ export class BreakoutGame {
   #maybeSpawnModifier(position: vec2) {
     if (!this.resourceManager) return;
     const modifierToSpawn = Random.choice(modifierSpawnPossibilities, modifierSpawnWeights);
+
     if (!modifierToSpawn) return;
+
+    // Chaos and confuse should not be active at the same time, so
+    // a chaos modifier is not spawned when confuse is active and vice-versa
+    if (
+      (modifierToSpawn === "chaos" && this.#postProcessor?.effectIsActive("confuse")) ||
+      (modifierToSpawn === "confuse" && this.#postProcessor?.effectIsActive("chaos"))
+    ) {
+      return;
+    }
+
     const modifier = new BreakoutModifier({ name: modifierToSpawn });
     modifier.spawnModifierPill(
       position,
@@ -398,6 +411,7 @@ export class BreakoutGame {
         this.#paddle.sticky = true;
         modifier.duration = duration;
         this.#paddle.colour = BreakoutModifierPill.getDefaultColour(modifier.name);
+        break;
       case "pass-through":
         if (!this.#ball) break;
         this.#ball.passThrough = true;
@@ -406,6 +420,10 @@ export class BreakoutGame {
       default:
         throw new Error(`Unknown modifier: ${modifier.name}`);
     }
+  }
+
+  #isOtherModifierActive(modifiers: BreakoutModifier[], name: BreakoutModifierName) {
+    return modifiers.some((modifier) => modifier.name === name);
   }
 
   #updateSpawnedModifiers(dt: number) {
@@ -434,23 +452,37 @@ export class BreakoutGame {
         case "chaos":
         case "confuse":
           if (!this.#postProcessor) break;
-          this.#postProcessor.resetEffect(modifier.name);
+          if (!this.#isOtherModifierActive(this.#spawnedModifiers, modifier.name)) {
+            this.#postProcessor.resetEffect(modifier.name);
+          }
           break;
         case "sticky-paddle":
           if (!this.#paddle) break;
           if (!this.#ball) break;
-          this.#paddle.sticky = false;
-          this.#ball.stuck = false;
-          this.#paddle.colour = vec4.fromValues(1, 1, 1, 1);
+          if (!this.#isOtherModifierActive(this.#spawnedModifiers, modifier.name)) {
+            this.#paddle.sticky = false;
+            this.#ball.stuck = false;
+            this.#paddle.colour = vec4.fromValues(1, 1, 1, 1);
+          }
           break;
         case "pass-through":
           if (!this.#ball) break;
-          this.#ball.passThrough = false;
-          this.#ball.colour = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
+          if (!this.#isOtherModifierActive(this.#spawnedModifiers, modifier.name)) {
+            this.#ball.passThrough = false;
+            this.#ball.colour = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
+          }
+          break;
         default:
           throw new Error(`Unknown modifier: ${modifier.name}`);
       }
     }
+
+    // Remove modifiers that have been spawned and destroyed (i.e. they went past the bottom of the screen),
+    // but not activated or modifiers that have been collected (i.e. collided with the paddle) and have been
+    // deactivated (i.e. activated past their duration)
+    this.#spawnedModifiers = this.#spawnedModifiers.filter(
+      (modifier) => modifier.pill || modifier.isActive
+    );
   }
 
   #drawSpawnedModifiers(gl: WebGL2RenderingContext, spriteRenderer: SpriteRenderer) {
