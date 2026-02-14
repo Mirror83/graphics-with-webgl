@@ -1,6 +1,7 @@
 import { mat4, vec2, vec4 } from "gl-matrix";
 import { on } from "svelte/events";
 import {
+  aabbAndCircleCollisionResponse,
   checkCollisionAABBAndCircle,
   checkCollisionAABBs,
   type AABBCollision
@@ -258,26 +259,12 @@ export class BreakoutGame {
   }
 
   #handleCollisionWithBlock(ball: Ball, block: Block, collision: AABBCollision) {
-    if (!block.isSolid) {
-      block.destroyed = true;
-    }
-    const direction = collision.direction;
-    if (direction === "LEFT" || direction === "RIGHT") {
-      ball.velocity[0] = -ball.velocity[0];
-      const penetration = ball.radius - Math.abs(collision.difference[0]);
-      if (direction === "LEFT") {
-        ball.position[0] += penetration;
-      } else {
-        ball.position[0] -= penetration;
-      }
+    aabbAndCircleCollisionResponse(ball, collision);
+    if (block.isSolid) {
+      this.#postProcessor?.activateEffect({ effectName: "shake", collisionWith: "solid-block" });
     } else {
-      ball.velocity[1] = -ball.velocity[1];
-      const penetration = ball.radius - Math.abs(collision.difference[1]);
-      if (direction === "UP") {
-        ball.position[1] -= penetration;
-      } else {
-        ball.position[1] += penetration;
-      }
+      block.destroyed = true;
+      this.#maybeSpawnModifier(vec2.fromValues(block.position[0], block.position[1]));
     }
   }
 
@@ -344,11 +331,6 @@ export class BreakoutGame {
         if (block.destroyed) continue;
         const blockCollisionResult = checkCollisionAABBAndCircle(this.#ball, block);
         if (!blockCollisionResult.isColliding) continue;
-        if (block.isSolid) {
-          this.#postProcessor?.activateEffect({ effectName: "shake", collisionWith: "wall" });
-        } else {
-          this.#maybeSpawnModifier(vec2.fromValues(block.position[0], block.position[1]));
-        }
         this.#handleCollisionWithBlock(this.#ball, block, blockCollisionResult);
       }
 

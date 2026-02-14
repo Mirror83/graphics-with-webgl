@@ -25,7 +25,7 @@ export type Circle = {
 
 /** @tutorial https://learnopengl.com/In-Practice/2D-Game/Collisions/Collision-detection */
 export function checkCollisionAABBAndCircle(circle: Circle, box: AABB): AABBCollisionCheckResult {
-  const ballCenter = vec2.fromValues(
+  const circleCenter = vec2.fromValues(
     circle.position[0] + circle.radius,
     circle.position[1] + circle.radius
   );
@@ -34,13 +34,13 @@ export function checkCollisionAABBAndCircle(circle: Circle, box: AABB): AABBColl
     box.position[0] + boxHalfExtents[0],
     box.position[1] + boxHalfExtents[1]
   );
-  let difference = vec2.subtract(vec2.create(), ballCenter, boxCenter);
+  let difference = vec2.subtract(vec2.create(), circleCenter, boxCenter);
   const clamped = vec2.fromValues(
     Math.max(-boxHalfExtents[0], Math.min(difference[0], boxHalfExtents[0])),
     Math.max(-boxHalfExtents[1], Math.min(difference[1], boxHalfExtents[1]))
   );
   const closest = vec2.add(vec2.create(), boxCenter, clamped);
-  difference = vec2.subtract(vec2.create(), closest, ballCenter);
+  difference = vec2.subtract(vec2.create(), closest, circleCenter);
   const isColliding = vec2.length(difference) < circle.radius;
   if (!isColliding) {
     return { isColliding: false };
@@ -58,4 +58,32 @@ export function checkCollisionAABBs(box1: AABB, box2: AABB): boolean {
     box1.position[1] + box1.size[1] >= box2.position[1] &&
     box2.position[1] + box2.size[1] >= box1.position[1];
   return collisionX && collisionY;
+}
+
+/**
+ * Assumes that the {@link Circle|`Circle`} is a moving object, and modifies its position
+ * and velocity based on the {@link AABBCollision|`AABBCollision`} information
+ */
+export function aabbAndCircleCollisionResponse(
+  circle: Circle & { velocity: vec2 },
+  collision: AABBCollision
+) {
+  const direction = collision.direction;
+  if (direction === "LEFT" || direction === "RIGHT") {
+    circle.velocity[0] = -circle.velocity[0];
+    const penetration = circle.radius - Math.abs(collision.difference[0]);
+    if (direction === "LEFT") {
+      circle.position[0] += penetration;
+    } else {
+      circle.position[0] -= penetration;
+    }
+  } else {
+    circle.velocity[1] = -circle.velocity[1];
+    const penetration = circle.radius - Math.abs(collision.difference[1]);
+    if (direction === "UP") {
+      circle.position[1] -= penetration;
+    } else {
+      circle.position[1] += penetration;
+    }
+  }
 }
