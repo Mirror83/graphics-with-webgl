@@ -2,15 +2,13 @@ import { vec2, vec4 } from "gl-matrix";
 import type { SpriteRenderer } from "~/lib/game/sprite";
 import type { Texture2D } from "~/lib/textures";
 
-type BreakoutGameObjectProperties = {
+export type BreakoutGameObjectProperties = {
   position: vec2;
   size: vec2;
   sprite: Texture2D;
   velocity?: vec2;
   colour?: vec4;
   rotationAngle?: number;
-  isSolid?: boolean;
-  destroyed?: boolean;
 };
 
 export class BreakoutGameObject {
@@ -20,8 +18,6 @@ export class BreakoutGameObject {
   sprite: Texture2D;
   colour: vec4;
   rotationAngle: number;
-  isSolid: boolean;
-  destroyed: boolean;
 
   constructor(properties: BreakoutGameObjectProperties) {
     this.position = properties.position;
@@ -30,8 +26,6 @@ export class BreakoutGameObject {
     this.colour = properties.colour ?? vec4.fromValues(1, 1, 1, 1);
     this.velocity = properties.velocity ?? vec2.fromValues(0, 0);
     this.rotationAngle = properties.rotationAngle ?? 0;
-    this.isSolid = properties.isSolid ?? false;
-    this.destroyed = properties.destroyed ?? false;
   }
 
   draw(gl: WebGL2RenderingContext, renderer: SpriteRenderer) {
@@ -39,7 +33,21 @@ export class BreakoutGameObject {
   }
 }
 
-export class Block extends BreakoutGameObject {}
+export type BlockProperties = BreakoutGameObjectProperties & {
+  isSolid: boolean;
+  destroyed: boolean;
+};
+
+export class Block extends BreakoutGameObject {
+  destroyed: boolean;
+  isSolid: boolean;
+
+  constructor(properties: BlockProperties) {
+    super({ ...properties });
+    this.destroyed = properties.destroyed;
+    this.isSolid = properties.isSolid;
+  }
+}
 
 type PaddleProperties = Omit<BreakoutGameObjectProperties, "size" | "velocity"> & {
   size?: vec2;
@@ -51,12 +59,15 @@ export class Paddle extends BreakoutGameObject {
   static readonly INITIAL_VELOCITY = vec2.fromValues(800, 0);
   static readonly Y_OFFSET = 10;
 
+  sticky: boolean = false;
+
   constructor(properties: PaddleProperties) {
     super({
       ...properties,
-      size: properties.size ?? Paddle.INITIAL_SIZE,
-      velocity: properties.velocity ?? Paddle.INITIAL_VELOCITY,
-      isSolid: true
+      size: properties.size ?? vec2.fromValues(Paddle.INITIAL_SIZE[0], Paddle.INITIAL_SIZE[1]),
+      velocity:
+        properties.velocity ??
+        vec2.fromValues(Paddle.INITIAL_VELOCITY[0], Paddle.INITIAL_VELOCITY[1])
     });
   }
 
@@ -74,6 +85,7 @@ export class Ball extends BreakoutGameObject {
   static readonly INITIAL_RADIUS = 12.5;
   static readonly INITIAL_SIZE = vec2.fromValues(Ball.INITIAL_RADIUS * 2, Ball.INITIAL_RADIUS * 2);
   radius: number;
+  passThrough: boolean = false;
   stuck: boolean = true;
 
   constructor(properties: BallProperties) {
@@ -100,5 +112,6 @@ export class Ball extends BreakoutGameObject {
   ) {
     this.position = position;
     this.velocity = velocity;
+    this.passThrough = false;
   }
 }
