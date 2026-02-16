@@ -2,27 +2,47 @@ import type { BreakoutGameDimensions } from "~/lib/game/game.svelte";
 import type { Shader } from "~/lib/shaders";
 import { Texture2D } from "~/lib/textures";
 
+type BreakoutPostProcessingEffectName = "shake" | "chaos" | "confuse";
+
 interface BreakoutPostProcessingEffect {
   isActive: boolean;
   durationInSeconds: number;
 }
 
-interface ShakeEffect extends BreakoutPostProcessingEffect {
-  shakeStrength: number;
+interface BreakoutPostProcessingEffectWithStrength extends BreakoutPostProcessingEffect {
+  strength: number;
 }
 
-type BreakoutEffects = {
+type ShakeEffect = BreakoutPostProcessingEffectWithStrength;
+type ChaosEffect = BreakoutPostProcessingEffectWithStrength;
+type ConfuseEffect = BreakoutPostProcessingEffect;
+
+type BreakoutPostProcessingEffects = {
   shake: ShakeEffect;
+  chaos: ChaosEffect;
+  confuse: ConfuseEffect;
 };
 
-type BreakoutPostProcessingEffectName = keyof BreakoutEffects;
-
 type ShakeActivationParams = {
-  effectName: BreakoutPostProcessingEffectName;
+  effectName: "shake";
   collisionWith: "wall" | "solid-block";
 };
 
-type BreakoutPostProcessingEffectActivationParams = ShakeActivationParams;
+type ChaosActivationParams = {
+  effectName: "chaos";
+  durationInSeconds: number;
+  strength?: number;
+};
+
+type ConfuseActivationParams = {
+  effectName: "confuse";
+  durationInSeconds: number;
+};
+
+type BreakoutPostProcessingEffectActivationParams =
+  | ShakeActivationParams
+  | ChaosActivationParams
+  | ConfuseActivationParams;
 
 export class BreakoutPostProcessor {
   static readonly NUMBER_OF_SAMPLES_MULTI_SAMPLING = 4;
@@ -38,11 +58,20 @@ export class BreakoutPostProcessor {
   #multiSampleFbo: WebGLFramebuffer | null = null;
   #multiSampleRbo: WebGLRenderbuffer | null = null;
 
-  effects: BreakoutEffects = {
+  effects: BreakoutPostProcessingEffects = {
     shake: {
       isActive: false,
       durationInSeconds: 0,
-      shakeStrength: 0.01
+      strength: 0.01
+    },
+    chaos: {
+      isActive: false,
+      durationInSeconds: 0.0,
+      strength: 0.01
+    },
+    confuse: {
+      isActive: false,
+      durationInSeconds: 0
     }
   };
 
@@ -113,6 +142,12 @@ export class BreakoutPostProcessor {
       2.0 / blurKernelElementSum, 4.0 / blurKernelElementSum, 2.0 / blurKernelElementSum,
       1.0 / blurKernelElementSum, 2.0 / blurKernelElementSum, 1.0 / blurKernelElementSum,
     ]);
+    // prettier-ignore
+    const edgeDetectionKernel = new Float32Array([
+      1.0,  1.0, 1.0,
+      1.0, -8.0, 1.0,
+      1.0,  1.0, 1.0
+    ]);
 
     this.postProcessingShader
       .use(gl)
@@ -120,6 +155,7 @@ export class BreakoutPostProcessor {
       .setUniform(gl, "gameScene", { type: "int", value: 0 })
       .setUniform(gl, "kernelOffsets", { type: "vec2f-array", value: kernelOffsets })
       .setUniform(gl, "blurKernel", { type: "float-array", value: blurKernel })
+      .setUniform(gl, "edgeDetectionKernel", { type: "float-array", value: edgeDetectionKernel })
       .finishUse(gl);
   }
 
@@ -191,11 +227,21 @@ export class BreakoutPostProcessor {
     this.postProcessingShader
       .use(gl)
       .setUniform(gl, "timeInSeconds", { type: "float", value: timeInSeconds })
+
       .setUniform(gl, "effects.shake", { type: "boolean", value: this.effects.shake.isActive })
       .setUniform(gl, "effects.shakeStrength", {
         type: "float",
-        value: this.effects.shake.shakeStrength
-      });
+        value: this.effects.shake.strength
+      })
+
+      .setUniform(gl, "effects.chaos", { type: "boolean", value: this.effects.chaos.isActive })
+      .setUniform(gl, "effects.chaosStrength", {
+        type: "float",
+        value: this.effects.chaos.strength
+      })
+
+      .setUniform(gl, "effects.confuse", { type: "boolean", value: this.effects.confuse.isActive });
+
     gl.activeTexture(gl.TEXTURE0);
     this.screenTexture.bind(gl);
     gl.bindVertexArray(this.#screenTextureQuadVao);
@@ -205,42 +251,63 @@ export class BreakoutPostProcessor {
     gl.bindVertexArray(null);
   }
 
+  effectIsActive(effectName: BreakoutPostProcessingEffectName): boolean {
+    return this.effects[effectName].isActive;
+  }
+
   activateEffect(activationParams: BreakoutPostProcessingEffectActivationParams) {
     switch (activationParams.effectName) {
       case "shake":
         this.#activateShake(activationParams);
         break;
+      case "chaos":
+        this.#activateChaos(activationParams);
+        break;
+      case "confuse":
+        this.#activateConfuse(activationParams);
+        break;
       default:
-        throw new Error(`Unknown effect: ${activationParams.effectName}`);
+        throw new Error(`Unknown effect activation params: ${activationParams}`);
     }
   }
 
   updateEffects(dt: number) {
-    this.#updateShake(dt);
+    Object.keys(this.effects).forEach((effectName) => {
+      const effect = this.effects[effectName as keyof BreakoutPostProcessingEffects];
+      if (effect.isActive && effect.durationInSeconds > 0) {
+        effect.durationInSeconds -= dt;
+        if (effect.durationInSeconds <= Number.EPSILON) {
+          this.resetEffect(effectName as keyof BreakoutPostProcessingEffects);
+        }
+      }
+    });
+  }
+
+  resetEffect(effectName: BreakoutPostProcessingEffectName) {
+    this.effects[effectName].isActive = false;
+    this.effects[effectName].durationInSeconds = 0;
   }
 
   resetEffects() {
-    if (this.effects.shake.isActive) {
-      this.#resetShake();
-    }
+    Object.keys(this.effects).forEach((effectName) => {
+      this.resetEffect(effectName as BreakoutPostProcessingEffectName);
+    });
   }
 
   #activateShake(activationParams: ShakeActivationParams) {
     this.effects.shake.isActive = true;
-    this.effects.shake.durationInSeconds = activationParams.collisionWith === "wall" ? 0.05 : 0.15;
-    this.effects.shake.shakeStrength = activationParams.collisionWith === "wall" ? 0.01 : 0.15;
+    this.effects.shake.durationInSeconds = activationParams.collisionWith === "wall" ? 0.04 : 0.02;
+    this.effects.shake.strength = activationParams.collisionWith === "wall" ? 0.01 : 0.06;
   }
 
-  #updateShake(dt: number) {
-    if (!this.effects.shake.isActive) return;
-    this.effects.shake.durationInSeconds -= dt;
-    if (this.effects.shake.durationInSeconds <= Number.EPSILON) {
-      this.#resetShake();
-    }
+  #activateChaos(activationParams: ChaosActivationParams) {
+    this.effects.chaos.isActive = true;
+    this.effects.chaos.durationInSeconds = activationParams.durationInSeconds;
+    this.effects.chaos.strength = activationParams.strength ?? 0.15;
   }
 
-  #resetShake() {
-    this.effects.shake.isActive = false;
-    this.effects.shake.durationInSeconds = 0;
+  #activateConfuse(activationParams: ConfuseActivationParams) {
+    this.effects.confuse.isActive = true;
+    this.effects.confuse.durationInSeconds = activationParams.durationInSeconds;
   }
 }
