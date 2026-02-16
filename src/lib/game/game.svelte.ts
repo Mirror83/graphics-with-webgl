@@ -1,4 +1,4 @@
-import { mat4, vec2, vec4 } from "gl-matrix";
+import { mat4, vec2, vec3, vec4 } from "gl-matrix";
 import { on } from "svelte/events";
 import {
   aabbAndCircleCollisionResponse,
@@ -416,7 +416,6 @@ export class BreakoutGame {
       case "pass-through":
         if (!this.#ball) break;
         this.#ball.passThrough = true;
-        this.#ball.colour = vec4.fromValues(0.0, 0.4, 0.0, 1.0);
         break;
       default:
         throw new Error(`Unknown modifier: ${modifier.name}`);
@@ -470,7 +469,6 @@ export class BreakoutGame {
           if (!this.#ball) break;
           if (!this.#isOtherModifierActive(this.#spawnedModifiers, modifier.name)) {
             this.#ball.passThrough = false;
-            this.#ball.colour = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
           }
           break;
         default:
@@ -554,7 +552,12 @@ export class BreakoutGame {
 
     this.#getCurrentLevel().draw(gl, this.#spriteRenderer);
     if (!this.#ball.stuck) {
-      this.#particleGenerator.drawParticles(gl);
+      this.#particleGenerator.drawParticles(
+        gl,
+        this.#isOtherModifierActive(this.#spawnedModifiers, "pass-through")
+          ? BreakoutModifierPill.getDefaultColour("pass-through")
+          : undefined
+      );
     }
     this.#paddle.draw(gl, this.#spriteRenderer);
     this.#ball.draw(gl, this.#spriteRenderer);

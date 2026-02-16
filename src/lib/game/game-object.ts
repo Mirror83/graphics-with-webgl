@@ -112,7 +112,6 @@ export class Ball extends BreakoutGameObject {
   ) {
     this.position = position;
     this.velocity = velocity;
-    this.colour = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
     this.passThrough = false;
   }
 }

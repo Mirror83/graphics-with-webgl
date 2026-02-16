@@ -1,4 +1,4 @@
-import { vec2, vec4 } from "gl-matrix";
+import { vec2, vec3, vec4 } from "gl-matrix";
 import { BreakoutGameObject } from "~/lib/game/game-object";
 import { Random } from "~/lib/game/random";
 import type { Shader } from "~/lib/shaders";
@@ -12,7 +12,7 @@ export type Particle = {
 };
 
 const NUMBER_OF_PARTICLES = 500;
-const NUMBER_OF_NEW_PARTICLES_PER_FRAME = 5;
+const NUMBER_OF_NEW_PARTICLES_PER_FRAME = 3;
 
 const EPSILON = 1e-5;
 
@@ -123,7 +123,7 @@ export class ParticleGenerator {
   }
 
   /** Render all particles */
-  drawParticles(gl: WebGL2RenderingContext) {
+  drawParticles(gl: WebGL2RenderingContext, customParticleColour?: vec3) {
     // Change blend mode to additive that gives a glow effect
     // when particles are stacked onto each other
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
@@ -135,7 +135,17 @@ export class ParticleGenerator {
     for (const particle of this.#particles) {
       if (!this.#particleIsDead(particle)) {
         this.#shader.setUniform(gl, "offset", { type: "vec2", value: particle.position });
-        this.#shader.setUniform(gl, "colour", { type: "vec4", value: particle.colour });
+        this.#shader.setUniform(gl, "colour", {
+          type: "vec4",
+          value: customParticleColour
+            ? vec4.fromValues(
+                customParticleColour[0],
+                customParticleColour[1],
+                customParticleColour[2],
+                particle.colour[3]
+              )
+            : particle.colour
+        });
         gl.drawArrays(gl.TRIANGLES, 0, 6);
       }
     }
