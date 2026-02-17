@@ -1,23 +1,32 @@
 <script lang="ts">
-  import { Pause } from "@lucide/svelte";
+  import { Pause, Speaker, SpeakerIcon, Volume, VolumeIcon, VolumeOff } from "@lucide/svelte";
   import { resizeCanvas } from "~/lib/canvas";
   import {
     BreakoutGame,
     BreakoutGameState,
-    type BreakoutGameDimensions
+    soundModeList,
+    type BreakoutGameDimensions,
+    type SoundMode
   } from "~/lib/game/game.svelte";
   import { ResourceManager } from "~/lib/game/resource-manager";
 
   let { data } = $props();
-  let glExternal: WebGL2RenderingContext;
+  let glContext: WebGL2RenderingContext | undefined = $state();
   let canvas: HTMLCanvasElement;
   const game = new BreakoutGame();
 
   let pauseMenu: HTMLDialogElement;
 
-  async function setupGame(gl: WebGL2RenderingContext, dimensions: BreakoutGameDimensions) {
+  async function setupGame(
+    gl: WebGL2RenderingContext,
+    {
+      dimensions = { x: 800, y: 600 },
+      soundMode = "no-sound"
+    }: { dimensions?: BreakoutGameDimensions; soundMode?: SoundMode } = {}
+  ) {
+    resizeCanvas(canvas, gl, dimensions.x, dimensions.y);
     const resourceManager = new ResourceManager(data.breakoutAssetsBaseURL);
-    await game.init(gl, resourceManager, dimensions);
+    await game.init(gl, resourceManager, dimensions, soundMode);
 
     game.render(gl);
   }
@@ -42,8 +51,23 @@
       game.resume();
     }}
   >
-    <div class="flex min-h-32 min-w-60 flex-col items-center justify-center">
+    <div class="flex min-h-32 min-w-60 flex-col items-center justify-center px-4 py-4">
       <p class="mb-4 text-xl font-bold">Breakout</p>
+      <section class="mb-8">
+        <h2>Sound settings</h2>
+        <div class="flex flex-row items-center">
+          {#each soundModeList as mode}
+            <button
+              class={[
+                "border p-2",
+                mode === game.soundMode && "bg-black text-white hover:cursor-default!"
+              ]}
+              disabled={mode === game.soundMode}
+              onclick={() => game.setSoundMode(mode)}>{mode}</button
+            >
+          {/each}
+        </div>
+      </section>
       <div class="space-y-2">
         <button
           class="rounded border p-2"
@@ -58,13 +82,25 @@
             pauseMenu.close();
           }}>Reset game</button
         >
+        <a class="rounded border p-2" href="/">To Home Page</a>
       </div>
     </div>
   </dialog>
   <div class="absolute z-20 flex items-center justify-center">
-    <div>
+    <div class="flex flex-col items-center gap-4">
       {#if game.state === BreakoutGameState.NOT_INITIALIZED}
-        <p>Initializing game...</p>
+        <div>Do you want sound?</div>
+        <div class="items-center justify-center">
+          {#each soundModeList as mode}
+            <button
+              class={[
+                "border p-2 hover:text-black",
+                mode === "no-sound" ? "hover:bg-red-300" : "hover:bg-green-300"
+              ]}
+              onclick={() => setupGame(glContext!, { soundMode: mode })}>{mode}</button
+            >
+          {/each}
+        </div>
       {/if}
     </div>
   </div>
@@ -76,10 +112,7 @@
       if (!gl) {
         return;
       }
-      glExternal = gl;
-      const dimensions: BreakoutGameDimensions = { x: window.innerWidth, y: window.innerHeight };
-      resizeCanvas(canvas, gl, dimensions.x, dimensions.y);
-      setupGame(gl, dimensions);
+      glContext = gl;
       return () => {
         game.clearResources(gl);
       };
