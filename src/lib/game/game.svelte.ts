@@ -18,7 +18,12 @@ import {
 import { ParticleGenerator } from "~/lib/game/particle";
 import { BreakoutPostProcessor } from "~/lib/game/post-processor";
 import { Random } from "~/lib/game/random";
-import { modifierTextureNames, ResourceManager } from "~/lib/game/resource-manager";
+import {
+  modifierTextureNames,
+  ResourceManager,
+  soundEffectNames,
+  type SoundEffectName
+} from "~/lib/game/resource-manager";
 import { SpriteRenderer } from "~/lib/game/sprite";
 import { updateRenderTime, type RenderTime } from "~/lib/render";
 
@@ -37,6 +42,9 @@ export type BreakoutGameDimensions = {
 
 const NUMBER_OF_LEVELS = 4;
 
+export const soundModeList = ["no-sound", "sfx-only", "music-only", "sfx+music"] as const;
+export type SoundMode = (typeof soundModeList)[number];
+
 export class BreakoutGame {
   state: BreakoutGameState = $state(BreakoutGameState.NOT_INITIALIZED);
   fps: number = $state(0);
@@ -54,6 +62,8 @@ export class BreakoutGame {
   #postProcessor: BreakoutPostProcessor | null = null;
   #spawnedModifiers: BreakoutModifier[] = [];
 
+  soundMode: SoundMode = $state("no-sound");
+
   setWindowSize(size: BreakoutGameDimensions) {
     this.windowSize = size;
   }
@@ -62,9 +72,11 @@ export class BreakoutGame {
   async init(
     gl: WebGL2RenderingContext,
     resourceManager: ResourceManager,
-    windowSize: BreakoutGameDimensions
+    windowSize: BreakoutGameDimensions,
+    soundMode: SoundMode = "no-sound"
   ) {
     this.windowSize = windowSize;
+    this.soundMode = soundMode;
     const levelSize = { x: windowSize.x, y: windowSize.y / 2 };
     this.resourceManager = resourceManager;
     await Promise.all([
@@ -90,7 +102,10 @@ export class BreakoutGame {
       }),
       ...modifierTextureNames.map((name) =>
         this.resourceManager!.loadTexture(gl, name, `textures/${name}.png`)
-      )
+      ),
+
+      ...soundEffectNames.map((name) => this.resourceManager!.loadAudio(name, `audio/${name}.wav`)),
+      this.resourceManager.loadAudio("background-music", `audio/background-music.mp3`)
     ]);
     // These define the size of the near and far planes of the orthographic projection
     // (their top-left and bottom-right corners)
@@ -181,10 +196,56 @@ export class BreakoutGame {
 
     this.#inputHandlerDisposers.push(this.#configurePaddleMovementInputHandler());
 
+    if (this.#canPlayBackgroundMusic()) {
+      this.#playBackgroundMusic();
+    }
+
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
     this.state = BreakoutGameState.ACTIVE;
+  }
+
+  #canPlayBackgroundMusic() {
+    return this.soundMode === "music-only" || this.soundMode === "sfx+music";
+  }
+
+  #canPlaySoundEffects() {
+    return this.soundMode === "sfx+music" || this.soundMode === "sfx-only";
+  }
+
+  #playBackgroundMusic() {
+    if (!this.resourceManager?.getAudioPlayer("background-music")?.isPlayedAtLeastOnce) {
+      this.resourceManager?.getAudioPlayer("background-music")?.play({ loop: true });
+    } else {
+      this.resourceManager.getAudioPlayer("background-music")?.resume();
+    }
+  }
+
+  #pauseBackgroundMusic() {
+    this.resourceManager?.getAudioPlayer("background-music")?.pause();
+  }
+
+  #playSoundEffect(name: SoundEffectName) {
+    if (this.#canPlaySoundEffects()) {
+      this.resourceManager?.getAudioPlayer(name)?.play();
+    }
+  }
+
+  setSoundMode(mode: SoundMode) {
+    this.soundMode = mode;
+    switch (this.soundMode) {
+      case "music-only":
+      case "sfx+music":
+        this.#playBackgroundMusic();
+        break;
+      case "no-sound":
+      case "sfx-only":
+        this.#pauseBackgroundMusic();
+        break;
+      default:
+        break;
+    }
   }
 
   #getInitialPaddlePosition(windowSize: BreakoutGameDimensions): vec2 {
@@ -266,9 +327,11 @@ export class BreakoutGame {
     }
     if (block.isSolid) {
       this.#postProcessor?.activateEffect({ effectName: "shake", collisionWith: "solid-block" });
+      this.#playSoundEffect("block-solid");
     } else {
       block.destroyed = true;
       this.#maybeSpawnModifier(vec2.fromValues(block.position[0], block.position[1]));
+      if (!ball.passThrough) this.#playSoundEffect("block");
     }
   }
 
@@ -290,6 +353,7 @@ export class BreakoutGame {
 
   #handleCollisionWithPaddle(ball: Ball, paddle: Paddle) {
     this.#ballAndPaddleCollisionResponse(ball, paddle);
+    this.#playSoundEffect("paddle");
     ball.stuck = paddle.sticky;
   }
 
@@ -370,6 +434,7 @@ export class BreakoutGame {
       if (!modifierCollisionResult) continue;
       this.#activateModifier(modifier);
       modifier.destroyModifierPill();
+      this.#playSoundEffect("modifier");
     }
   }
 

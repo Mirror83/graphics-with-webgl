@@ -1,3 +1,4 @@
+import { BreakoutAudioPlayer } from "~/lib/game/audio-player";
 import { Shader, type ShaderSources } from "~/lib/shaders";
 import { Texture2D } from "~/lib/textures";
 
@@ -23,6 +24,10 @@ type TextureName =
 
 type ShaderName = "sprite" | "particle" | "post-processing";
 
+export const soundEffectNames = ["block", "block-solid", "modifier", "paddle"] as const;
+export type SoundEffectName = (typeof soundEffectNames)[number];
+type AudioName = SoundEffectName | "background-music";
+
 type Fetch = typeof fetch;
 
 type ShaderSourcesRelativePaths = {
@@ -33,6 +38,7 @@ type ShaderSourcesRelativePaths = {
 export class ResourceManager {
   #shaders = new Map<ShaderName, Shader>();
   #textures = new Map<TextureName, Texture2D>();
+  #audioPlayers = new Map<AudioName, BreakoutAudioPlayer>();
   #fetch: Fetch;
   #breakoutAssetsBaseURL: string;
 
@@ -108,6 +114,18 @@ export class ResourceManager {
     return await response.text();
   }
 
+  async loadAudio(name: AudioName, path: string) {
+    const response = await this.#fetch(path);
+    const buffer = await response.arrayBuffer();
+    const audioPlayer = new BreakoutAudioPlayer();
+    await audioPlayer.init(buffer);
+    this.#audioPlayers.set(name, audioPlayer);
+  }
+
+  getAudioPlayer(name: AudioName): BreakoutAudioPlayer | null {
+    return this.#audioPlayers.get(name) ?? null;
+  }
+
   clearResources(gl: WebGL2RenderingContext) {
     Object.values(this.#shaders).forEach((shader) => {
       gl.deleteProgram(shader.program);
@@ -118,5 +136,6 @@ export class ResourceManager {
         texture.id = null;
       }
     });
+    this.#audioPlayers.clear();
   }
 }
