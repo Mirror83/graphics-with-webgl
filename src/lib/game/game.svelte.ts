@@ -534,38 +534,39 @@ export class BreakoutGame {
     if (!backgroundTexture) return;
     if (!this.#paddle) return;
     if (!this.#ball) return;
-    if (this.state !== BreakoutGameState.ACTIVE) return;
     if (!this.#particleGenerator) return;
 
-    this.#postProcessor?.beginRenderToScreenTexture(gl);
+    if (this.state === BreakoutGameState.ACTIVE) {
+      this.#postProcessor?.beginRenderToScreenTexture(gl);
 
-    this.#spriteRenderer.drawSprite(
-      gl,
-      backgroundTexture,
-      vec2.fromValues(0, 0),
-      vec2.fromValues(this.windowSize.x, this.windowSize.y),
-      vec4.fromValues(1, 1, 1, 1),
-      0
-    );
-
-    this.update(this.#renderTime.deltaTime);
-
-    this.#getCurrentLevel().draw(gl, this.#spriteRenderer);
-    if (!this.#ball.stuck) {
-      this.#particleGenerator.drawParticles(
+      this.#spriteRenderer.drawSprite(
         gl,
-        this.#isOtherModifierActive(this.#spawnedModifiers, "pass-through")
-          ? BreakoutModifierPill.getDefaultColour("pass-through")
-          : undefined
+        backgroundTexture,
+        vec2.fromValues(0, 0),
+        vec2.fromValues(this.windowSize.x, this.windowSize.y),
+        vec4.fromValues(1, 1, 1, 1),
+        0
       );
-    }
-    this.#paddle.draw(gl, this.#spriteRenderer);
-    this.#ball.draw(gl, this.#spriteRenderer);
-    this.#drawSpawnedModifiers(gl, this.#spriteRenderer);
 
-    this.#postProcessor?.endRenderToScreenTexture(gl);
-    const timeInSeconds = this.#renderTime.previousTime / 1000;
-    this.#postProcessor?.renderWithPostProcessing(gl, timeInSeconds);
+      this.update(this.#renderTime.deltaTime);
+
+      this.#getCurrentLevel().draw(gl, this.#spriteRenderer);
+      if (!this.#ball.stuck) {
+        this.#particleGenerator.drawParticles(
+          gl,
+          this.#isOtherModifierActive(this.#spawnedModifiers, "pass-through")
+            ? BreakoutModifierPill.getDefaultColour("pass-through")
+            : undefined
+        );
+      }
+      this.#paddle.draw(gl, this.#spriteRenderer);
+      this.#ball.draw(gl, this.#spriteRenderer);
+      this.#drawSpawnedModifiers(gl, this.#spriteRenderer);
+
+      this.#postProcessor?.endRenderToScreenTexture(gl);
+      const timeInSeconds = this.#renderTime.previousTime / 1000;
+      this.#postProcessor?.renderWithPostProcessing(gl, timeInSeconds);
+    }
 
     this.#requestAnimationFrameId = requestAnimationFrame((time) => {
       updateRenderTime(this.#renderTime, time);
@@ -575,18 +576,11 @@ export class BreakoutGame {
   }
 
   pause() {
-    if (this.#requestAnimationFrameId !== null) {
-      cancelAnimationFrame(this.#requestAnimationFrameId);
-      this.#requestAnimationFrameId = null;
-      this.state = BreakoutGameState.PAUSED;
-    }
+    this.state = BreakoutGameState.PAUSED;
   }
 
-  resume(gl: WebGL2RenderingContext) {
-    if (this.state === BreakoutGameState.PAUSED) {
-      this.state = BreakoutGameState.ACTIVE;
-      this.render(gl);
-    }
+  resume() {
+    this.state = BreakoutGameState.ACTIVE;
   }
 
   clearResources(gl: WebGL2RenderingContext) {
