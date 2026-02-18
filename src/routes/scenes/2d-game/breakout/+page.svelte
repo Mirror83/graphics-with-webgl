@@ -39,7 +39,7 @@
     bind:this={pauseMenu}
     class="m-auto"
     onclose={() => {
-      game.resume(glExternal);
+      game.resume();
     }}
   >
     <div class="flex min-h-32 min-w-60 flex-col items-center justify-center">
