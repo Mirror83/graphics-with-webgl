@@ -32,6 +32,7 @@ export enum BreakoutGameState {
   PAUSED,
   MENU,
   WIN,
+  LOSE,
   NOT_INITIALIZED
 }
 
@@ -41,6 +42,7 @@ export type BreakoutGameDimensions = {
 };
 
 const NUMBER_OF_LEVELS = 4;
+const NUMBER_OF_LIVES = 3;
 
 export const soundModeList = ["no-sound", "sfx-only", "music-only", "sfx+music"] as const;
 export type SoundMode = (typeof soundModeList)[number];
@@ -61,6 +63,8 @@ export class BreakoutGame {
   #particleGenerator: ParticleGenerator | null = null;
   #postProcessor: BreakoutPostProcessor | null = null;
   #spawnedModifiers: BreakoutModifier[] = [];
+
+  #lives: number = $state(NUMBER_OF_LIVES);
 
   soundMode: SoundMode = $state("no-sound");
 
@@ -248,6 +252,10 @@ export class BreakoutGame {
     }
   }
 
+  getRemainingLives() {
+    return this.#lives;
+  }
+
   #getInitialPaddlePosition(windowSize: BreakoutGameDimensions): vec2 {
     return vec2.fromValues(
       windowSize.x / 2 - Paddle.INITIAL_SIZE[0] / 2,
@@ -293,13 +301,12 @@ export class BreakoutGame {
     return this.#levels[this.#currentLevelIndex];
   }
 
-  resetCurrentLevel() {
+  retryLevel() {
     if (!this.#paddle) return;
     if (!this.#ball) return;
     if (!this.windowSize) return;
     if (!this.#particleGenerator) return;
 
-    const currentLevel = this.#getCurrentLevel();
     this.#paddle.size = vec2.fromValues(Paddle.INITIAL_SIZE[0], Paddle.INITIAL_SIZE[1]);
     this.#paddle.position = this.#getInitialPaddlePosition(this.windowSize);
     this.#paddle.sticky = false;
@@ -314,7 +321,13 @@ export class BreakoutGame {
     this.#clearModifiers();
     this.#particleGenerator.killAllParticles();
     this.#postProcessor?.resetEffects();
-    currentLevel.reset();
+  }
+
+  replayLevel() {
+    this.#lives = NUMBER_OF_LIVES;
+    this.retryLevel();
+    this.#getCurrentLevel().reset();
+    this.state = BreakoutGameState.ACTIVE;
   }
 
   #getCurrentLevelBlocks() {
@@ -578,11 +591,22 @@ export class BreakoutGame {
     } else {
       this.#ball.move(dt);
     }
+
     this.#checkAndHandleCollisions();
+    if (this.#getCurrentLevel().isCompleted()) {
+      this.state = BreakoutGameState.WIN;
+    }
+
     this.#updateSpawnedModifiers(dt);
     if (this.#ball.position[1] >= this.windowSize.y) {
-      this.resetCurrentLevel();
+      this.#lives -= 1;
+      if (this.#lives === 0) {
+        this.state = BreakoutGameState.LOSE;
+      } else {
+        this.retryLevel();
+      }
     }
+
     this.#particleGenerator.update(
       dt,
       this.#ball,
