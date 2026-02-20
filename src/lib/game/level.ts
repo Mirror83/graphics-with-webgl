@@ -54,7 +54,14 @@ export class BreakoutGameLevel {
             const colour = this.#getColourForBlockKind(blockKind);
             const sprite = this.#getBlockTextureByKind(resourceManager, blockKind);
             const isSolid = this.#isBlockSolid(blockKind);
-            const block = new Block({ position, size, sprite: sprite, colour, isSolid });
+            const block = new Block({
+              position,
+              size,
+              sprite: sprite,
+              colour,
+              isSolid,
+              destroyed: false
+            });
             this.blocks.push(block);
         }
       }
@@ -70,7 +77,7 @@ export class BreakoutGameLevel {
   }
 
   isCompleted(): boolean {
-    return false;
+    return this.blocks.every((block) => block.isSolid || block.destroyed);
   }
 
   draw(gl: WebGL2RenderingContext, renderer: SpriteRenderer) {
