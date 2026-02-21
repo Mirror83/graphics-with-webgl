@@ -46,6 +46,11 @@ const NUMBER_OF_LIVES = 3;
 
 export const soundModeList = ["no-sound", "sfx-only", "music-only", "sfx+music"] as const;
 export type SoundMode = (typeof soundModeList)[number];
+export type GameInitOptionalParams = Partial<{
+  windowSize: BreakoutGameDimensions;
+  soundMode: SoundMode;
+  startingLevel: number;
+}>;
 
 export class BreakoutGame {
   state: BreakoutGameState = $state(BreakoutGameState.NOT_INITIALIZED);
@@ -54,7 +59,7 @@ export class BreakoutGame {
   resourceManager: ResourceManager | null = null;
   #spriteRenderer: SpriteRenderer | null = null;
   #levels: BreakoutGameLevel[] = [];
-  #currentLevelIndex: number = 0;
+  #currentLevel: number = 1;
   #paddle: Paddle | null = null;
   #ball: Ball | null = null;
   #renderTime: RenderTime = { deltaTime: 0, previousTime: 0 };
@@ -65,7 +70,6 @@ export class BreakoutGame {
   #spawnedModifiers: BreakoutModifier[] = [];
 
   #lives: number = $state(NUMBER_OF_LIVES);
-
   soundMode: SoundMode = $state("no-sound");
 
   setWindowSize(size: BreakoutGameDimensions) {
@@ -76,8 +80,11 @@ export class BreakoutGame {
   async init(
     gl: WebGL2RenderingContext,
     resourceManager: ResourceManager,
-    windowSize: BreakoutGameDimensions,
-    soundMode: SoundMode = "no-sound"
+    {
+      windowSize = { x: 800, y: 800 },
+      soundMode = "no-sound",
+      startingLevel = 1
+    }: GameInitOptionalParams = {}
   ) {
     this.windowSize = windowSize;
     this.soundMode = soundMode;
@@ -138,7 +145,7 @@ export class BreakoutGame {
     );
 
     this.#levels = levels;
-    this.#currentLevelIndex = 0;
+    this.setCurrentLevel(startingLevel);
 
     const paddleSprite = this.resourceManager.getTexture("paddle");
     if (!paddleSprite) {
@@ -207,7 +214,7 @@ export class BreakoutGame {
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
-    this.state = BreakoutGameState.ACTIVE;
+    this.state = BreakoutGameState.MENU;
   }
 
   #canPlayBackgroundMusic() {
@@ -297,8 +304,19 @@ export class BreakoutGame {
     });
   }
 
+  getLevelNumbers() {
+    const levelNumbers = Array(NUMBER_OF_LEVELS)
+      .fill(0)
+      .map((_, i) => i + 1);
+    return levelNumbers;
+  }
+
+  toMenu() {
+    this.state = BreakoutGameState.MENU;
+  }
+
   #getCurrentLevel() {
-    return this.#levels[this.#currentLevelIndex];
+    return this.#levels[this.#currentLevel - 1];
   }
 
   retryLevel() {
@@ -323,11 +341,16 @@ export class BreakoutGame {
     this.#postProcessor?.resetEffects();
   }
 
-  replayLevel() {
+  resetLevel() {
     this.#lives = NUMBER_OF_LIVES;
     this.retryLevel();
     this.#getCurrentLevel().reset();
     this.state = BreakoutGameState.ACTIVE;
+  }
+
+  setCurrentLevel(levelNumber: number = 1) {
+    this.#currentLevel = levelNumber;
+    this.resetLevel();
   }
 
   #getCurrentLevelBlocks() {
