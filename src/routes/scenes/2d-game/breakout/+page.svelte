@@ -1,12 +1,11 @@
 <script lang="ts">
-  import { Pause, Speaker, SpeakerIcon, Volume, VolumeIcon, VolumeOff } from "@lucide/svelte";
+  import { Pause } from "@lucide/svelte";
   import { resizeCanvas } from "~/lib/canvas";
   import {
     BreakoutGame,
     BreakoutGameState,
     soundModeList,
-    type BreakoutGameDimensions,
-    type SoundMode
+    type GameInitOptionalParams
   } from "~/lib/game/game.svelte";
   import { ResourceManager } from "~/lib/game/resource-manager";
 
@@ -17,8 +16,12 @@
 
   let pauseMenu: HTMLDialogElement;
   let resultMenu: HTMLDialogElement;
+  let levelSelectMenu: HTMLDialogElement;
 
   $effect(() => {
+    if (game.state === BreakoutGameState.MENU) {
+      levelSelectMenu.showModal();
+    }
     if (game.state === BreakoutGameState.WIN || game.state === BreakoutGameState.LOSE) {
       resultMenu.showModal();
     }
@@ -27,13 +30,18 @@
   async function setupGame(
     gl: WebGL2RenderingContext,
     {
-      dimensions = { x: 800, y: 600 },
-      soundMode = "no-sound"
-    }: { dimensions?: BreakoutGameDimensions; soundMode?: SoundMode } = {}
+      windowSize = { x: 800, y: 600 },
+      soundMode = "no-sound",
+      startingLevel: currentLevel = 1
+    }: GameInitOptionalParams = {}
   ) {
-    resizeCanvas(canvas, gl, dimensions.x, dimensions.y);
+    resizeCanvas(canvas, gl, windowSize.x, windowSize.y);
     const resourceManager = new ResourceManager(data.breakoutAssetsBaseURL);
-    await game.init(gl, resourceManager, dimensions, soundMode);
+    await game.init(gl, resourceManager, {
+      windowSize: windowSize,
+      soundMode,
+      startingLevel: currentLevel
+    });
 
     game.render(gl);
   }
@@ -63,9 +71,9 @@
       game.resume();
     }}
   >
-    <div class="flex min-h-32 min-w-60 flex-col items-center justify-center px-4 py-4">
-      <p class="mb-4 text-xl font-bold">Breakout</p>
-      <section class="mb-8">
+    <div class="flex min-h-32 min-w-60 flex-col items-center justify-center space-y-4 px-4 py-4">
+      <p class="text-xl font-bold">Breakout</p>
+      <section>
         <h2>Sound settings</h2>
         <div class="flex flex-row items-center">
           {#each soundModeList as mode}
@@ -80,52 +88,78 @@
           {/each}
         </div>
       </section>
-      <div class="space-y-2">
+      <div>
         <button
-          class="rounded border p-2"
+          class="border p-2"
           onclick={() => {
             pauseMenu.close();
           }}>Resume</button
         >
         <button
-          class="rounded border p-2"
+          class="border p-2"
           onclick={() => {
             game.retryLevel();
             pauseMenu.close();
-          }}>Reset game</button
+          }}>Reset level</button
         >
-        <a class="rounded border p-2" href="/">To Home Page</a>
+        <button
+          class="border p-2"
+          onclick={() => {
+            game.toMenu();
+            pauseMenu.close();
+          }}>Level select</button
+        >
       </div>
+      <a class="underline" href="/">To Home Page</a>
     </div>
   </dialog>
 
   <dialog bind:this={resultMenu} class="m-auto backdrop:backdrop-blur-sm">
-    <div class="flex min-h-32 min-w-60 flex-col items-center justify-center px-4 py-4">
+    <div class="flex min-h-32 min-w-60 flex-col items-center justify-center space-y-4 px-4 py-4">
       <p class="mb-4 text-xl font-bold">
         {game.state === BreakoutGameState.WIN ? "You Win" : "You Lose"}
       </p>
-      <div class="space-y-2">
+      <div>
         <button
-          class="rounded border p-2"
+          class="border p-2"
           onclick={() => {
-            game.replayLevel();
+            game.resetLevel();
             resultMenu.close();
           }}>Play again</button
         >
         <button
-          class="rounded border p-2"
+          class="border p-2"
           onclick={() => {
+            game.toMenu();
             resultMenu.close();
           }}>Level Select</button
         >
-        <a class="rounded border p-2" href="/">To Home Page</a>
       </div>
+      <a class="underline" href="/">To Home Page</a>
     </div>
   </dialog>
 
-  <div class="absolute z-20 flex items-center justify-center">
-    <div class="flex flex-col items-center gap-4">
-      {#if game.state === BreakoutGameState.NOT_INITIALIZED}
+  <dialog bind:this={levelSelectMenu} class="m-auto backdrop:backdrop-blur-sm">
+    <div class="flex min-h-32 min-w-60 flex-col items-center justify-center space-y-4 px-4 py-4">
+      <div class="text-xl font-bold">Breakout</div>
+      <div class="grid-cols-2">
+        {#each game.getLevelNumbers() as levelNumber}
+          <button
+            class="border p-2"
+            onclick={() => {
+              game.setCurrentLevel(levelNumber);
+              levelSelectMenu.close();
+            }}>Level {levelNumber}</button
+          >
+        {/each}
+      </div>
+      <a class="underline" href="/">To Home Page</a>
+    </div>
+  </dialog>
+
+  <div class="absolute z-20 flex items-center justify-center text-white">
+    {#if game.state === BreakoutGameState.NOT_INITIALIZED}
+      <div class="flex flex-col items-center gap-4">
         <div>Do you want sound?</div>
         <div class="items-center justify-center">
           {#each soundModeList as mode}
@@ -138,8 +172,8 @@
             >
           {/each}
         </div>
-      {/if}
-    </div>
+      </div>
+    {/if}
   </div>
 
   <canvas
