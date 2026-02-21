@@ -131,18 +131,21 @@ export class BreakoutGameLevel {
 
   #parseLevelFileContent(levelFileContent: string) {
     const tileData = levelFileContent.split("\n").map((line) =>
-      line.split(" ").map((stringNumber) => {
-        try {
-          const tileKind = Number(stringNumber);
-          if (BreakoutGameLevelBlockKind[tileKind]) {
-            return tileKind as BreakoutGameLevelBlockKind;
+      line
+        .trim()
+        .split(" ")
+        .map((stringNumber) => {
+          try {
+            const tileKind = Number(stringNumber);
+            if (BreakoutGameLevelBlockKind[tileKind]) {
+              return tileKind as BreakoutGameLevelBlockKind;
+            }
+            throw new Error("Invalid tile kind");
+          } catch (err) {
+            console.error(err);
+            return BreakoutGameLevelBlockKind.EMPTY;
           }
-          throw new Error("Invalid tile kind");
-        } catch (err) {
-          console.error(err);
-          return BreakoutGameLevelBlockKind.EMPTY;
-        }
-      })
+        })
     );
     return tileData;
   }
