@@ -648,7 +648,17 @@ export class BreakoutGame {
     if (!this.#ball) return;
     if (!this.#particleGenerator) return;
 
-    if (this.state === BreakoutGameState.ACTIVE) {
+    if (this.state === BreakoutGameState.MENU) {
+      // Just draw the background while at the menu.
+      this.#spriteRenderer.drawSprite(
+        gl,
+        backgroundTexture,
+        vec2.fromValues(0, 0),
+        vec2.fromValues(this.windowSize.x, this.windowSize.y),
+        vec4.fromValues(1, 1, 1, 1),
+        0
+      );
+    } else if (this.state === BreakoutGameState.ACTIVE) {
       this.#postProcessor?.beginRenderToScreenTexture(gl);
 
       this.#spriteRenderer.drawSprite(
