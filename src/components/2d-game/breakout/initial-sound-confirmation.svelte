@@ -1,10 +1,16 @@
 <script lang="ts">
+  import type { SvelteHTMLElements } from "svelte/elements";
   import type { SoundMode } from "~/lib/game/game.svelte";
   import { soundModeList } from "~/lib/game/game.svelte";
-  let { setupGame }: { setupGame: (mode: SoundMode) => void } = $props();
+
+  type Props = {
+    setupGame: (mode: SoundMode) => void;
+  } & SvelteHTMLElements["div"];
+
+  let { setupGame, ...rest }: Props = $props();
 </script>
 
-<div class="absolute z-20 flex items-center justify-center text-white">
+<div class="absolute z-20 flex items-center justify-center text-white" {...rest}>
   <div class="flex flex-col items-center gap-4">
     <div>Do you want sound?</div>
     <div class="items-center justify-center">
