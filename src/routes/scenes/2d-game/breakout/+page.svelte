@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Pause } from "@lucide/svelte";
+  import InitialSoundConfirmation from "~/components/2d-game/breakout/initial-sound-confirmation.svelte";
   import { resizeCanvas } from "~/lib/canvas";
   import {
     BreakoutGame,
@@ -45,32 +46,58 @@
 
     game.render(gl);
   }
+
+  function gameCanvasAttachment(canvas: HTMLCanvasElement) {
+    const gl = canvas.getContext("webgl2");
+    if (!gl) {
+      return;
+    }
+    glContext = gl;
+    return () => {
+      game.clearResources(gl);
+    };
+  }
 </script>
 
-<h1 class="sr-only">Breakout</h1>
 <main class="flex min-h-screen items-center justify-center bg-black">
+  <h1 class="sr-only">Breakout</h1>
+  <canvas bind:this={canvas} {@attach gameCanvasAttachment}></canvas>
+
   {#if game.state === BreakoutGameState.ACTIVE}
-    <button
-      class="absolute top-8 left-8"
-      aria-label="Pause game"
-      onclick={() => {
-        game.pause();
-        pauseMenu.showModal();
-      }}><Pause /></button
-    >
-    <div class="absolute top-8 right-8 flex flex-col gap-2 text-white">
-      <div>Lives: {game.getRemainingLives()}</div>
-      <div>FPS: {game.fps}</div>
-    </div>
+    {@render pauseButtonAndLevelInfo()}
   {/if}
 
-  <dialog
-    bind:this={pauseMenu}
-    class="m-auto backdrop:backdrop-blur-sm"
-    onclose={() => {
-      game.resume();
-    }}
+  {@render pauseMenuDialog()}
+  {@render resultDialog()}
+  {@render levelSelectDialog()}
+
+  {#if game.state === BreakoutGameState.NOT_INITIALIZED}
+    <InitialSoundConfirmation
+      setupGame={(soundMode) => {
+        if (!glContext) throw new Error("No gl context");
+        setupGame(glContext, { soundMode });
+      }}
+    />
+  {/if}
+</main>
+
+{#snippet pauseButtonAndLevelInfo()}
+  <button
+    class="absolute top-8 left-8"
+    aria-label="Pause game"
+    onclick={() => {
+      game.pause();
+      pauseMenu.showModal();
+    }}><Pause /></button
   >
+  <div class="absolute top-8 right-8 flex flex-col gap-2 text-white">
+    <div>Lives: {game.getRemainingLives()}</div>
+    <div>FPS: {game.fps}</div>
+  </div>
+{/snippet}
+
+{#snippet pauseMenuDialog()}
+  <dialog bind:this={pauseMenu} class="m-auto backdrop:backdrop-blur-sm" onclose={game.resume}>
     <div class="flex min-h-32 min-w-60 flex-col items-center justify-center space-y-4 px-4 py-4">
       <p class="text-xl font-bold">Breakout</p>
       <section>
@@ -113,7 +140,9 @@
       <a class="underline" href="/">To Home Page</a>
     </div>
   </dialog>
+{/snippet}
 
+{#snippet resultDialog()}
   <dialog bind:this={resultMenu} class="m-auto backdrop:backdrop-blur-sm">
     <div class="flex min-h-32 min-w-60 flex-col items-center justify-center space-y-4 px-4 py-4">
       <p class="mb-4 text-xl font-bold">
@@ -138,7 +167,9 @@
       <a class="underline" href="/">To Home Page</a>
     </div>
   </dialog>
+{/snippet}
 
+{#snippet levelSelectDialog()}
   <dialog bind:this={levelSelectMenu} class="m-auto backdrop:backdrop-blur-sm">
     <div class="flex min-h-32 min-w-60 flex-col items-center justify-center space-y-4 px-4 py-4">
       <div class="text-xl font-bold">Breakout</div>
@@ -156,37 +187,4 @@
       <a class="underline" href="/">To Home Page</a>
     </div>
   </dialog>
-
-  <div class="absolute z-20 flex items-center justify-center text-white">
-    {#if game.state === BreakoutGameState.NOT_INITIALIZED}
-      <div class="flex flex-col items-center gap-4">
-        <div>Do you want sound?</div>
-        <div class="items-center justify-center">
-          {#each soundModeList as mode}
-            <button
-              class={[
-                "border p-2 hover:text-black",
-                mode === "no-sound" ? "hover:bg-red-300" : "hover:bg-green-300"
-              ]}
-              onclick={() => setupGame(glContext!, { soundMode: mode })}>{mode}</button
-            >
-          {/each}
-        </div>
-      </div>
-    {/if}
-  </div>
-
-  <canvas
-    bind:this={canvas}
-    {@attach (canvas) => {
-      const gl = canvas.getContext("webgl2");
-      if (!gl) {
-        return;
-      }
-      glContext = gl;
-      return () => {
-        game.clearResources(gl);
-      };
-    }}
-  ></canvas>
-</main>
+{/snippet}
