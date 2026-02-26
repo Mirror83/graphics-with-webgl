@@ -177,7 +177,7 @@ export const parts: Record<PartName, Part> = {
     scenes: [
       {
         name: "Breakout",
-        route: "breakout?hide-navbar=true",
+        route: "breakout",
         description:
           "A simple 2D Breakout game implemented using WebGL for rendering and TypeScript for game logic.",
         hasCustomRouteFolder: true
