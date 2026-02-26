@@ -19,6 +19,10 @@
   let resultMenu: HTMLDialogElement;
   let levelSelectMenu: HTMLDialogElement;
 
+  $inspect(game.state).with((type, state) =>
+    console.log("type:", type, "\nvalue:", BreakoutGameState[state])
+  );
+
   $effect(() => {
     if (game.state === BreakoutGameState.MENU) {
       levelSelectMenu.showModal();
@@ -30,18 +34,13 @@
 
   async function setupGame(
     gl: WebGL2RenderingContext,
-    {
-      windowSize = { x: 800, y: 600 },
-      soundMode = "no-sound",
-      startingLevel: currentLevel = 1
-    }: GameInitOptionalParams = {}
+    { windowSize = { x: 700, y: 500 }, soundMode = "no-sound" }: GameInitOptionalParams = {}
   ) {
     resizeCanvas(canvas, gl, windowSize.x, windowSize.y);
     const resourceManager = new ResourceManager(data.breakoutAssetsBaseURL);
     await game.init(gl, resourceManager, {
       windowSize: windowSize,
-      soundMode,
-      startingLevel: currentLevel
+      soundMode
     });
 
     game.render(gl);
@@ -59,13 +58,16 @@
   }
 </script>
 
-<main class="flex min-h-screen items-center justify-center bg-black">
+<main class="flex min-h-screen flex-col items-center justify-center bg-black">
   <h1 class="sr-only">Breakout</h1>
-  <canvas bind:this={canvas} {@attach gameCanvasAttachment}></canvas>
-
   {#if game.state === BreakoutGameState.ACTIVE}
     {@render pauseButtonAndLevelInfo()}
   {/if}
+  <canvas
+    class={[game.state === BreakoutGameState.NOT_INITIALIZED ? "hidden" : "block"]}
+    bind:this={canvas}
+    {@attach gameCanvasAttachment}
+  ></canvas>
 
   {@render pauseMenuDialog()}
   {@render resultDialog()}
@@ -82,22 +84,29 @@
 </main>
 
 {#snippet pauseButtonAndLevelInfo()}
-  <button
-    class="absolute top-8 left-8"
-    aria-label="Pause game"
-    onclick={() => {
-      game.pause();
-      pauseMenu.showModal();
-    }}><Pause /></button
-  >
-  <div class="absolute top-8 right-8 flex flex-col gap-2 text-white">
-    <div>Lives: {game.getRemainingLives()}</div>
-    <div>FPS: {game.fps}</div>
+  {@const levelNumber = game.getCurrentLevelNumber()}
+  <div class="mb-4 flex w-175 items-center justify-between text-white">
+    <button
+      aria-label="Pause game"
+      onclick={() => {
+        game.pause();
+        pauseMenu.showModal();
+      }}><Pause /></button
+    >
+    {#if levelNumber}
+      <div>Level {levelNumber}</div>
+    {/if}
+    <div class="flex flex-col">
+      <div class="text-sm">
+        <div>Lives: {game.getRemainingLives()}</div>
+        <div>FPS: {game.fps}</div>
+      </div>
+    </div>
   </div>
 {/snippet}
 
 {#snippet pauseMenuDialog()}
-  <dialog bind:this={pauseMenu} class="m-auto backdrop:backdrop-blur-sm" onclose={game.resume}>
+  <dialog bind:this={pauseMenu} class="m-auto backdrop:backdrop-blur-sm">
     <div class="flex min-h-32 min-w-60 flex-col items-center justify-center space-y-4 px-4 py-4">
       <p class="text-xl font-bold">Breakout</p>
       <section>
@@ -110,7 +119,9 @@
                 mode === game.soundMode && "bg-black text-white hover:cursor-default!"
               ]}
               disabled={mode === game.soundMode}
-              onclick={() => game.setSoundMode(mode)}>{mode}</button
+              onclick={() => {
+                game.setSoundMode(mode);
+              }}>{mode}</button
             >
           {/each}
         </div>
@@ -120,12 +131,13 @@
           class="border p-2"
           onclick={() => {
             pauseMenu.close();
+            game.resume();
           }}>Resume</button
         >
         <button
           class="border p-2"
           onclick={() => {
-            game.retryLevel();
+            game.restartLevel();
             pauseMenu.close();
           }}>Reset level</button
         >
@@ -152,7 +164,7 @@
         <button
           class="border p-2"
           onclick={() => {
-            game.resetLevel();
+            game.restartLevel();
             resultMenu.close();
           }}>Play again</button
         >
@@ -178,7 +190,7 @@
           <button
             class="border p-2"
             onclick={() => {
-              game.setCurrentLevel(levelNumber);
+              game.startLevel(levelNumber);
               levelSelectMenu.close();
             }}>Level {levelNumber}</button
           >

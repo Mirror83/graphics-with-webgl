@@ -49,7 +49,6 @@ export type SoundMode = (typeof soundModeList)[number];
 export type GameInitOptionalParams = Partial<{
   windowSize: BreakoutGameDimensions;
   soundMode: SoundMode;
-  startingLevel: number;
 }>;
 
 export class BreakoutGame {
@@ -59,7 +58,7 @@ export class BreakoutGame {
   resourceManager: ResourceManager | null = null;
   #spriteRenderer: SpriteRenderer | null = null;
   #levels: BreakoutGameLevel[] = [];
-  #currentLevel: number = 1;
+  #currentLevelNumber: number | null = $state(null);
   #paddle: Paddle | null = null;
   #ball: Ball | null = null;
   #renderTime: RenderTime = { deltaTime: 0, previousTime: 0 };
@@ -80,11 +79,7 @@ export class BreakoutGame {
   async init(
     gl: WebGL2RenderingContext,
     resourceManager: ResourceManager,
-    {
-      windowSize = { x: 800, y: 800 },
-      soundMode = "no-sound",
-      startingLevel = 1
-    }: GameInitOptionalParams = {}
+    { windowSize = { x: 800, y: 800 }, soundMode = "no-sound" }: GameInitOptionalParams = {}
   ) {
     this.windowSize = windowSize;
     this.soundMode = soundMode;
@@ -145,7 +140,6 @@ export class BreakoutGame {
     );
 
     this.#levels = levels;
-    this.setCurrentLevel(startingLevel);
 
     const paddleSprite = this.resourceManager.getTexture("paddle");
     if (!paddleSprite) {
@@ -311,12 +305,17 @@ export class BreakoutGame {
     return levelNumbers;
   }
 
+  getCurrentLevelNumber() {
+    return this.#currentLevelNumber;
+  }
+
   toMenu() {
     this.state = BreakoutGameState.MENU;
+    this.#currentLevelNumber = null;
   }
 
   #getCurrentLevel() {
-    return this.#levels[this.#currentLevel - 1];
+    return this.#currentLevelNumber ? this.#levels[this.#currentLevelNumber - 1] : null;
   }
 
   retryLevel() {
@@ -341,20 +340,24 @@ export class BreakoutGame {
     this.#postProcessor?.resetEffects();
   }
 
-  resetLevel() {
-    this.#lives = NUMBER_OF_LIVES;
-    this.retryLevel();
-    this.#getCurrentLevel().reset();
+  restartLevel() {
+    const currentLevel = this.#getCurrentLevel();
+    if (currentLevel) {
+      this.#lives = NUMBER_OF_LIVES;
+      this.retryLevel();
+      currentLevel.reset();
+      this.state = BreakoutGameState.ACTIVE;
+    }
+  }
+
+  startLevel(levelNumber: number = 1) {
+    this.#currentLevelNumber = levelNumber;
+    this.restartLevel();
     this.state = BreakoutGameState.ACTIVE;
   }
 
-  setCurrentLevel(levelNumber: number = 1) {
-    this.#currentLevel = levelNumber;
-    this.resetLevel();
-  }
-
   #getCurrentLevelBlocks() {
-    return this.#getCurrentLevel().blocks;
+    return this.#getCurrentLevel()?.blocks;
   }
 
   #handleCollisionWithBlock(ball: Ball, block: Block, collision: AABBCollision) {
@@ -422,16 +425,19 @@ export class BreakoutGame {
         this.#postProcessor?.activateEffect({ effectName: "shake", collisionWith: "wall" });
       }
 
-      for (const block of this.#getCurrentLevelBlocks()) {
-        if (block.destroyed) continue;
-        const blockCollisionResult = checkCollisionAABBAndCircle(this.#ball, block);
-        if (!blockCollisionResult.isColliding) continue;
-        this.#handleCollisionWithBlock(this.#ball, block, blockCollisionResult);
-      }
+      const blocks = this.#getCurrentLevelBlocks();
+      if (blocks) {
+        for (const block of blocks) {
+          if (block.destroyed) continue;
+          const blockCollisionResult = checkCollisionAABBAndCircle(this.#ball, block);
+          if (!blockCollisionResult.isColliding) continue;
+          this.#handleCollisionWithBlock(this.#ball, block, blockCollisionResult);
+        }
 
-      const paddleCollisionResult = checkCollisionAABBAndCircle(this.#ball, this.#paddle);
-      if (paddleCollisionResult.isColliding) {
-        this.#handleCollisionWithPaddle(this.#ball, this.#paddle);
+        const paddleCollisionResult = checkCollisionAABBAndCircle(this.#ball, this.#paddle);
+        if (paddleCollisionResult.isColliding) {
+          this.#handleCollisionWithPaddle(this.#ball, this.#paddle);
+        }
       }
     }
 
@@ -616,7 +622,7 @@ export class BreakoutGame {
     }
 
     this.#checkAndHandleCollisions();
-    if (this.#getCurrentLevel().isCompleted()) {
+    if (this.#getCurrentLevel()?.isCompleted()) {
       this.state = BreakoutGameState.WIN;
     }
 
@@ -672,7 +678,7 @@ export class BreakoutGame {
 
       this.update(this.#renderTime.deltaTime);
 
-      this.#getCurrentLevel().draw(gl, this.#spriteRenderer);
+      this.#getCurrentLevel()?.draw(gl, this.#spriteRenderer);
       if (!this.#ball.stuck) {
         this.#particleGenerator.drawParticles(
           gl,
