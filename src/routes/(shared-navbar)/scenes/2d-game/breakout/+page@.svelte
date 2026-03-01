@@ -25,11 +25,25 @@
   );
 
   $effect(() => {
-    if (game.state === BreakoutGameState.MENU) {
-      levelSelectMenu.showModal();
-    }
-    if (game.state === BreakoutGameState.WIN || game.state === BreakoutGameState.LOSE) {
-      resultMenu.showModal();
+    switch (game.state) {
+      case BreakoutGameState.MENU:
+        levelSelectMenu.showModal();
+        break;
+      case BreakoutGameState.PAUSED:
+        pauseMenu.showModal();
+        break;
+      case BreakoutGameState.WIN:
+      case BreakoutGameState.LOSE:
+        resultMenu.showModal();
+        break;
+      case BreakoutGameState.ACTIVE:
+        // Close all open modals
+        levelSelectMenu.open && levelSelectMenu.close();
+        resultMenu.open && resultMenu.close();
+        pauseMenu.open && pauseMenu.close();
+        break;
+      default:
+        break;
     }
   });
 
@@ -107,7 +121,7 @@
 {/snippet}
 
 {#snippet pauseMenuDialog()}
-  <dialog bind:this={pauseMenu} class="m-auto backdrop:backdrop-blur-sm">
+  <dialog bind:this={pauseMenu} class="m-auto backdrop:backdrop-blur-sm" closedby="none">
     <div class="flex min-h-32 min-w-60 flex-col items-center justify-center space-y-4 px-4 py-4">
       <p class="text-xl font-bold">Breakout</p>
       <section>
@@ -131,8 +145,8 @@
         <button
           class="border p-2"
           onclick={() => {
-            pauseMenu.close();
             game.resume();
+            pauseMenu.close();
           }}>Resume</button
         >
         <button
@@ -156,7 +170,7 @@
 {/snippet}
 
 {#snippet resultDialog()}
-  <dialog bind:this={resultMenu} class="m-auto backdrop:backdrop-blur-sm">
+  <dialog bind:this={resultMenu} class="m-auto backdrop:backdrop-blur-sm" closedby="none">
     <div class="flex min-h-32 min-w-60 flex-col items-center justify-center space-y-4 px-4 py-4">
       <p class="mb-4 text-xl font-bold">
         {game.state === BreakoutGameState.WIN ? "You Win" : "You Lose"}
@@ -183,7 +197,7 @@
 {/snippet}
 
 {#snippet levelSelectDialog()}
-  <dialog bind:this={levelSelectMenu} class="m-auto backdrop:backdrop-blur-sm">
+  <dialog bind:this={levelSelectMenu} class="m-auto backdrop:backdrop-blur-sm" closedby="none">
     <div class="flex min-h-32 min-w-60 flex-col items-center justify-center space-y-4 px-4 py-4">
       <div class="text-xl font-bold">Breakout</div>
       <div class="grid-cols-2">
@@ -192,7 +206,6 @@
             class="border p-2"
             onclick={() => {
               game.startLevel(levelNumber);
-              levelSelectMenu.close();
             }}>Level {levelNumber}</button
           >
         {/each}
