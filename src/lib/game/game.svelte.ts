@@ -199,7 +199,10 @@ export class BreakoutGame {
     this.#postProcessor = new BreakoutPostProcessor(postProcessingShader, this.windowSize);
     this.#postProcessor.init(gl);
 
-    this.#inputHandlerDisposers.push(this.#configurePaddleMovementInputHandler());
+    this.#inputHandlerDisposers.push(
+      this.#configurePaddleMovementInputHandler(),
+      this.#configureKeyUpInputHandlers()
+    );
 
     if (this.#canPlayBackgroundMusic()) {
       this.#playBackgroundMusic();
@@ -276,24 +279,49 @@ export class BreakoutGame {
     );
   }
 
+  #movePaddleOnInput(direction: "left" | "right") {
+    if (!this.windowSize) return;
+    if (!this.#paddle) return;
+
+    if (this.state !== BreakoutGameState.ACTIVE) return;
+    const velocity = this.#paddle.velocity[0] * this.#renderTime.deltaTime;
+    if (direction === "left") {
+      if (this.#paddle.position[0] >= 0.0) {
+        this.#paddle.position[0] -= velocity;
+      }
+    } else if (direction === "right") {
+      if (this.#paddle.position[0] + this.#paddle.size[0] <= this.windowSize.x) {
+        this.#paddle.position[0] += velocity;
+      }
+    }
+  }
+
+  #unstickBallOnInput() {
+    if (!this.#ball || !this.#ball.stuck) return;
+    this.#ball.stuck = false;
+  }
+
+  #configureKeyUpInputHandlers() {
+    return on(window, "keyup", (event: KeyboardEvent) => {
+      switch (event.key) {
+        case " ":
+          this.#unstickBallOnInput();
+          break;
+        default:
+          break;
+      }
+    });
+  }
+
   #configurePaddleMovementInputHandler() {
     return on(window, "keydown", (event: KeyboardEvent) => {
-      if (!this.#paddle) return;
-      if (!this.windowSize) return;
-      if (this.state !== BreakoutGameState.ACTIVE) return;
-
-      const velocity = this.#paddle.velocity[0] * this.#renderTime.deltaTime;
-      if (event.key === "ArrowLeft") {
-        if (this.#paddle.position[0] >= 0.0) {
-          this.#paddle.position[0] -= velocity;
-        }
-      } else if (event.key === "ArrowRight") {
-        if (this.#paddle.position[0] + this.#paddle.size[0] <= this.windowSize.x) {
-          this.#paddle.position[0] += velocity;
-        }
-      } else if (event.key === " ") {
-        if (!this.#ball) return;
-        this.#ball.stuck = false;
+      switch (event.key) {
+        case "ArrowLeft":
+        case "ArrowRight":
+          this.#movePaddleOnInput(event.key === "ArrowLeft" ? "left" : "right");
+          break;
+        default:
+          break;
       }
     });
   }
@@ -704,11 +732,15 @@ export class BreakoutGame {
   }
 
   pause() {
-    this.state = BreakoutGameState.PAUSED;
+    if (this.state === BreakoutGameState.ACTIVE) {
+      this.state = BreakoutGameState.PAUSED;
+    }
   }
 
   resume() {
-    this.state = BreakoutGameState.ACTIVE;
+    if (this.state === BreakoutGameState.PAUSED) {
+      this.state = BreakoutGameState.ACTIVE;
+    }
   }
 
   clearResources(gl: WebGL2RenderingContext) {
