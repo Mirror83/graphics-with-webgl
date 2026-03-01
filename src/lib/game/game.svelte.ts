@@ -307,6 +307,9 @@ export class BreakoutGame {
         case " ":
           this.#unstickBallOnInput();
           break;
+        case "Escape":
+          this.togglePause();
+          break;
         default:
           break;
       }
@@ -739,6 +742,14 @@ export class BreakoutGame {
 
   resume() {
     if (this.state === BreakoutGameState.PAUSED) {
+      this.state = BreakoutGameState.ACTIVE;
+    }
+  }
+
+  togglePause() {
+    if (this.state === BreakoutGameState.ACTIVE) {
+      this.state = BreakoutGameState.PAUSED;
+    } else if (this.state === BreakoutGameState.PAUSED) {
       this.state = BreakoutGameState.ACTIVE;
     }
   }
