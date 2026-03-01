@@ -1,6 +1,7 @@
 <script lang="ts">
   import { Pause } from "@lucide/svelte";
   import InitialSoundConfirmation from "~/components/2d-game/breakout/initial-sound-confirmation.svelte";
+  import ToHomepageLink from "~/components/2d-game/breakout/to-homepage-link.svelte";
   import { resizeCanvas } from "~/lib/canvas";
   import {
     BreakoutGame,
@@ -149,7 +150,7 @@
           }}>Level select</button
         >
       </div>
-      <a class="underline" href="/">To Home Page</a>
+      <ToHomepageLink />
     </div>
   </dialog>
 {/snippet}
@@ -176,7 +177,7 @@
           }}>Level Select</button
         >
       </div>
-      <a class="underline" href="/">To Home Page</a>
+      <ToHomepageLink />
     </div>
   </dialog>
 {/snippet}
@@ -196,7 +197,7 @@
           >
         {/each}
       </div>
-      <a class="underline" href="/">To Home Page</a>
+      <ToHomepageLink />
     </div>
   </dialog>
 {/snippet}

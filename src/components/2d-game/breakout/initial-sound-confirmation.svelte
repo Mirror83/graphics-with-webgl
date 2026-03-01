@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { SvelteHTMLElements } from "svelte/elements";
+  import ToHomepageLink from "~/components/2d-game/breakout/to-homepage-link.svelte";
   import type { SoundMode } from "~/lib/game/game.svelte";
   import { soundModeList } from "~/lib/game/game.svelte";
 
@@ -10,7 +11,7 @@
   let { setupGame, ...rest }: Props = $props();
 </script>
 
-<div class="flex items-center justify-center text-white" {...rest}>
+<div class="flex flex-col items-center justify-center space-y-4 text-white" {...rest}>
   <div class="flex flex-col items-center gap-4">
     <div>Do you want sound?</div>
     <div class="items-center justify-center">
@@ -25,4 +26,5 @@
       {/each}
     </div>
   </div>
+  <ToHomepageLink />
 </div>
