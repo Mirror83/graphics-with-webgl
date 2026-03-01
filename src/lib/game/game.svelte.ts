@@ -51,6 +51,8 @@ export type GameInitOptionalParams = Partial<{
   soundMode: SoundMode;
 }>;
 
+export const MIN_GAME_RESOLUTION_IN_PX = { x: 700, y: 525 };
+
 export class BreakoutGame {
   state: BreakoutGameState = $state(BreakoutGameState.NOT_INITIALIZED);
   fps: number = $state(0);
@@ -79,7 +81,7 @@ export class BreakoutGame {
   async init(
     gl: WebGL2RenderingContext,
     resourceManager: ResourceManager,
-    { windowSize = { x: 800, y: 800 }, soundMode = "no-sound" }: GameInitOptionalParams = {}
+    { windowSize = MIN_GAME_RESOLUTION_IN_PX, soundMode = "no-sound" }: GameInitOptionalParams = {}
   ) {
     this.windowSize = windowSize;
     this.soundMode = soundMode;

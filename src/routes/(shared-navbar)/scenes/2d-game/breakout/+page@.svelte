@@ -1,11 +1,14 @@
 <script lang="ts">
   import { Pause } from "@lucide/svelte";
+  import { onMount } from "svelte";
+  import { on } from "svelte/events";
   import InitialSoundConfirmation from "~/components/2d-game/breakout/initial-sound-confirmation.svelte";
   import ToHomepageLink from "~/components/2d-game/breakout/to-homepage-link.svelte";
   import { resizeCanvas } from "~/lib/canvas";
   import {
     BreakoutGame,
     BreakoutGameState,
+    MIN_GAME_RESOLUTION_IN_PX,
     soundModeList,
     type GameInitOptionalParams
   } from "~/lib/game/game.svelte";
@@ -15,14 +18,33 @@
   let glContext: WebGL2RenderingContext | undefined = $state();
   let canvas: HTMLCanvasElement;
   const game = new BreakoutGame();
+  const minWindowDimensions = { x: 800, y: 600 };
+  /** Indicates whether the current dimensions of the window matches the `minWindowDimensions` specified above.*/
+  let minWindowDimensionsMatches: boolean | undefined = $state();
 
   let pauseMenu: HTMLDialogElement;
   let resultMenu: HTMLDialogElement;
   let levelSelectMenu: HTMLDialogElement;
+  let windowTooSmallNotice: HTMLDialogElement;
 
   $inspect(game.state).with((type, state) =>
-    console.log("type:", type, "\nvalue:", BreakoutGameState[state])
+    console.log("(game.state) type:", type, "\nvalue:", BreakoutGameState[state])
   );
+
+  $inspect(minWindowDimensionsMatches).with((type, state) =>
+    console.log("(minDimensionsMatches) type:", type, "\nvalue:", state)
+  );
+
+  onMount(() => {
+    const mql = window.matchMedia(
+      `(width >= ${minWindowDimensions.x}px) and (height >= ${minWindowDimensions.y}px)`
+    );
+    minWindowDimensionsMatches = mql.matches;
+
+    return on(mql, "change", (event) => {
+      minWindowDimensionsMatches = event.matches;
+    });
+  });
 
   $effect(() => {
     switch (game.state) {
@@ -45,11 +67,21 @@
       default:
         break;
     }
+    if (!minWindowDimensionsMatches && game.state === BreakoutGameState.ACTIVE) {
+      // This changes the game state, triggering the effect again and thus opening the
+      // paused modal, and then subsequently opening the `windowTooSmallNotice` modal
+      game.pause();
+    } else if (!minWindowDimensionsMatches) {
+      // The is last in the `$effect` so that this modal draws over all open modals
+      windowTooSmallNotice.showModal();
+    } else {
+      windowTooSmallNotice.open && windowTooSmallNotice.close();
+    }
   });
 
   async function setupGame(
     gl: WebGL2RenderingContext,
-    { windowSize = { x: 700, y: 500 }, soundMode = "no-sound" }: GameInitOptionalParams = {}
+    { windowSize = MIN_GAME_RESOLUTION_IN_PX, soundMode = "no-sound" }: GameInitOptionalParams = {}
   ) {
     resizeCanvas(canvas, gl, windowSize.x, windowSize.y);
     const resourceManager = new ResourceManager(data.breakoutAssetsBaseURL);
@@ -73,22 +105,27 @@
   }
 </script>
 
-<main class="flex min-h-screen flex-col items-center justify-center bg-black">
+<main class="flex min-h-screen flex-col items-center justify-center bg-gray-950">
   <h1 class="sr-only">Breakout</h1>
-  {#if game.state === BreakoutGameState.ACTIVE}
+  {#if game.state === BreakoutGameState.ACTIVE && minWindowDimensionsMatches}
     {@render pauseButtonAndLevelInfo()}
   {/if}
   <canvas
-    class={[game.state === BreakoutGameState.NOT_INITIALIZED ? "hidden" : "block"]}
+    class={[
+      game.state === BreakoutGameState.NOT_INITIALIZED || !minWindowDimensionsMatches
+        ? "hidden"
+        : "block"
+    ]}
     bind:this={canvas}
     {@attach gameCanvasAttachment}
   ></canvas>
 
+  {@render windowTooSmallNoticeDialog()}
   {@render pauseMenuDialog()}
   {@render resultDialog()}
   {@render levelSelectDialog()}
 
-  {#if game.state === BreakoutGameState.NOT_INITIALIZED}
+  {#if game.state === BreakoutGameState.NOT_INITIALIZED && minWindowDimensionsMatches}
     <InitialSoundConfirmation
       setupGame={(soundMode) => {
         if (!glContext) throw new Error("No gl context");
@@ -97,6 +134,22 @@
     />
   {/if}
 </main>
+
+{#snippet windowTooSmallNoticeDialog()}
+  <dialog bind:this={windowTooSmallNotice} closedby="none" class="m-auto backdrop:bg-gray-950">
+    <section class="max-w-md bg-gray-800 p-8 text-center text-white">
+      <h2 class="mb-4 text-xl font-bold">Your window is too small.</h2>
+      <div class="mb-4">
+        <p>
+          If you are not on a mobile phone, please resize the window to at least {minWindowDimensions.x}
+          by {minWindowDimensions.y}px.
+        </p>
+        <p>If you <span class="italic">are</span> on a phone, well...</p>
+      </div>
+      <ToHomepageLink />
+    </section>
+  </dialog>
+{/snippet}
 
 {#snippet pauseButtonAndLevelInfo()}
   {@const levelNumber = game.getCurrentLevelNumber()}
