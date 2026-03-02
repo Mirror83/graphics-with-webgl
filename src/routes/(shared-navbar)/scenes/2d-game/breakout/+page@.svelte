@@ -118,7 +118,12 @@
     ]}
     bind:this={canvas}
     {@attach gameCanvasAttachment}
-  ></canvas>
+  >
+    A version of Breakout from
+    <a href="https://learnopengl.com/In-Practice/2D-Game/Breakout">Learn OpenGL</a>
+    rendered using
+    <a href="https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API#webgl_2">WebGL</a>
+  </canvas>
 
   {@render windowTooSmallNoticeDialog()}
   {@render pauseMenuDialog()}
