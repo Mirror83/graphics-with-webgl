@@ -114,7 +114,8 @@
     class={[
       game.state === BreakoutGameState.NOT_INITIALIZED || !minWindowDimensionsMatches
         ? "hidden"
-        : "block"
+        : "block",
+      "xl:aspect-4/3 xl:w-7/12"
     ]}
     bind:this={canvas}
     {@attach gameCanvasAttachment}
