@@ -253,6 +253,10 @@
   <dialog bind:this={levelSelectMenu} class="m-auto backdrop:backdrop-blur-sm" closedby="none">
     <div class="flex min-h-32 min-w-60 flex-col items-center justify-center space-y-4 px-4 py-4">
       <div class="text-xl font-bold">Breakout</div>
+      <p class="max-w-sm text-center text-sm">
+        Pick a level, press <span class="bg-gray-200">Space</span> to release the ball from the
+        paddle, and use the <span class="bg-gray-200">left and right arrow keys</span> to move the paddle.
+      </p>
       <div class="grid-cols-2">
         {#each game.getLevelNumbers() as levelNumber}
           <button
