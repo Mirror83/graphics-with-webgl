@@ -105,6 +105,14 @@
   }
 </script>
 
+<svelte:head>
+  <title>Breakout</title>
+  <meta
+    name="description"
+    content="A version of Breakout from Learn OpenGl made using SvelteKit and WebGL"
+  />
+</svelte:head>
+
 <main class="flex min-h-screen flex-col items-center justify-center bg-gray-950">
   <h1 class="sr-only">Breakout</h1>
   {#if game.state === BreakoutGameState.ACTIVE && minWindowDimensionsMatches}
