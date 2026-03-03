@@ -3,6 +3,7 @@
 // This comes with the limitation that Tauri APIs cannot be used in
 // `load` functions, but as this app only uses Tauri to render the
 // SvelteKit app in a desktop window (for now), this is acceptable.
-// See: https://svelte.dev/docs/kit/single-page-apps
-// See: https://v2.tauri.app/start/frontend/sveltekit/ for more info
+// See: https://svelte.dev/docs/kit/single-page-apps,
+// https://svelte.dev/docs/kit/adapter-static,
+// and https://v2.tauri.app/start/frontend/sveltekit/ for more info
 export const prerender = true;
