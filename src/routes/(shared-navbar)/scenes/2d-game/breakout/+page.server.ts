@@ -1,4 +1,4 @@
-import { VERCEL_URL, VERCEL_TARGET_ENV, VERCEL_BRANCH_URL } from "$env/static/private";
+import { VERCEL_URL, VERCEL_ENV, VERCEL_PROJECT_PRODUCTION_URL } from "$env/static/private";
 
 export function load() {
   const baseURL = getBaseURL();
@@ -9,10 +9,10 @@ export function load() {
 }
 
 function getBaseURL() {
-  if (VERCEL_TARGET_ENV === "production") {
+  if (VERCEL_ENV === "production") {
+    return `https://${VERCEL_PROJECT_PRODUCTION_URL}`;
+  } else if (VERCEL_ENV === "preview") {
     return `https://${VERCEL_URL}`;
-  } else if (VERCEL_TARGET_ENV === "preview") {
-    return `https://${VERCEL_BRANCH_URL}`;
   }
   return `http://localhost:1420`;
 }
