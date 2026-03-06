@@ -1,4 +1,4 @@
-import type { mat4, vec3, vec4 } from "gl-matrix";
+import type { mat4, vec2, vec3, vec4 } from "gl-matrix";
 
 type ShaderType =
   | WebGL2RenderingContext["VERTEX_SHADER"]
@@ -9,15 +9,37 @@ export type ShaderSources = {
   fragment: string;
 };
 
+type BooleanUniformValue = {
+  type: "boolean";
+  value: boolean;
+};
+
 type NumberUniformValue = {
   type: "float" | "int";
   value: number;
+};
+
+type FloatArrayUniformValue = {
+  type: "float-array";
+  value: Float32Array;
+};
+
+type Vec2UniformValue = {
+  type: "vec2";
+  value: vec2;
 };
 
 type Vec3UniformValue = {
   type: "vec3";
   value: vec3;
 };
+
+type VecFloatArrayUniformValue = {
+  type: "vec2f-array" | "vec3f-array";
+  value: Float32Array;
+};
+
+type VecArrayUniformValue = VecFloatArrayUniformValue;
 
 type Vec4UniformValue = {
   type: "vec4";
@@ -29,7 +51,15 @@ type Mat4UniformValue = {
   value: mat4;
 };
 
-type UniformValue = NumberUniformValue | Vec3UniformValue | Vec4UniformValue | Mat4UniformValue;
+type UniformValue =
+  | NumberUniformValue
+  | Vec2UniformValue
+  | Vec3UniformValue
+  | Vec4UniformValue
+  | Mat4UniformValue
+  | BooleanUniformValue
+  | VecArrayUniformValue
+  | FloatArrayUniformValue;
 
 type UniformDetails = {
   name: string;
@@ -106,6 +136,15 @@ export function setUniform(
     case "int":
       gl.uniform1i(location, details.value);
       break;
+    case "boolean":
+      gl.uniform1i(location, details.value ? 1 : 0);
+      break;
+    case "float-array":
+      gl.uniform1fv(location, details.value);
+      break;
+    case "vec2":
+      gl.uniform2fv(location, details.value);
+      break;
     case "vec3":
       gl.uniform3fv(location, details.value);
       break;
@@ -114,6 +153,16 @@ export function setUniform(
       break;
     case "mat4-float":
       gl.uniformMatrix4fv(location, false, details.value);
+      break;
+    case "vec2f-array":
+      if (details.value.length % 2 !== 0)
+        throw new Error("setUniform: vec2f-array length must be a multiple of 2");
+      gl.uniform2fv(location, details.value);
+      break;
+    case "vec3f-array":
+      if (details.value.length % 3 !== 0)
+        throw new Error("setUniform: vec3f-array length must be a multiple of 3");
+      gl.uniform3fv(location, details.value);
       break;
     default:
       console.warn(`Unsupported uniform type: ${details}`);
@@ -131,11 +180,21 @@ export class Shader {
     this.program = program;
   }
 
+  use(gl: WebGL2RenderingContext) {
+    gl.useProgram(this.program);
+    return this;
+  }
+
+  finishUse(gl: WebGL2RenderingContext) {
+    gl.useProgram(null);
+  }
+
   getAttributeLocation(gl: WebGL2RenderingContext, name: string): number {
     return gl.getAttribLocation(this.program, name);
   }
 
   setUniform(gl: WebGL2RenderingContext, name: string, data: UniformValue) {
     setUniform(gl, this.program, { name, ...data });
+    return this;
   }
 }
