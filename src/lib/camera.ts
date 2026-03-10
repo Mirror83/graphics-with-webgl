@@ -29,10 +29,10 @@ type CameraControlOptions = {
 };
 
 export class Camera {
-  position: vec3 = vec3.fromValues(0.0, 0.0, 0.0);
-  front: vec3 = vec3.fromValues(0.0, 0.0, -1.0);
-  up: vec3 = vec3.fromValues(0.0, 1.0, 0.0);
+  position: vec3;
+  up: vec3;
   right: vec3;
+  front: vec3 = vec3.fromValues(0.0, 0.0, -1.0);
   worldUp: vec3 = vec3.fromValues(0.0, 1.0, 0.0);
   eulerAngles: EulerAngles = {
     yaw: YAW,
@@ -46,11 +46,13 @@ export class Camera {
   };
 
   constructor(
-    position: vec3 = this.position,
-    up: vec3 = this.up,
+    position: vec3 = vec3.fromValues(0.0, 0.0, 0.0),
+    up: vec3 = vec3.fromValues(0.0, 1.0, 0.0),
     eulerAngles?: Partial<EulerAngles>
   ) {
     this.position = position;
+    this.up = up;
+
     if (eulerAngles) {
       this.eulerAngles = {
         yaw: eulerAngles.yaw ?? YAW,
