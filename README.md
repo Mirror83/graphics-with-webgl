@@ -7,7 +7,7 @@ This is an implementation of the demos in [Learn OpenGL](https://learnopengl.com
 
 This does not aim to be a one-for-one replication of the Learn OpenGL repository just in JavaScript. Instead, it is simply an attempt to learn graphics programming by going through the Learn OpenGL book.
 
-> N/B: You can download a PDF version of the contents of Learn OpenGL [here](https://learnopengl.com/book)
+> N/B: You can download a PDF version of the contents of Learn OpenGL [here](https://learnopengl.com/book/book_pdf.pdf)
 
 I intend to go through the following parts of the book:
 
